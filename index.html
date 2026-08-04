@@ -2,54 +2,32 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>磐石水印相机 Fixed</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>磐石水印相机 · 修正版</title>
 <style>
-:root{--gold:#c9a84c;--gold-light:#f9e7a0;--bg-dark:#0b0b0b;--card-bg:#121212;--text-main:#e8d8a9;--text-sub:#8a7a4a;--red-bar:#d9534f;}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0;}
-body{background:var(--bg-dark);color:var(--text-main);font-family:"PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh;padding:12px;display:flex;justify-content:center;align-items:flex-start;}
+:root{--gold:#d4af37;--bg:#0b0b0b;--card:#121212;--text:#e8d8a9;}
+*{box-sizing:border-box;font-family:"PingFang SC","Microsoft YaHei",sans-serif;}
+body{background:var(--bg);color:var(--text);padding:12px;display:flex;justify-content:center;}
 .wrap{max-width:420px;width:100%;}
-.card{background:var(--card-bg);border:1.5px solid var(--gold);border-radius:20px;padding:16px;box-shadow:0 0 40px rgba(201,168,76,.15);}
-.title{text-align:center;font-size:22px;font-weight:800;color:var(--gold-light);letter-spacing:2px;margin-bottom:4px;}
-.sub{text-align:center;font-size:11px;color:var(--text-sub);margin-bottom:14px;}
-.upload{display:flex;gap:10px;margin-bottom:14px;}
-.upload button{flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--gold);background:transparent;color:var(--gold-light);font-size:14px;font-weight:700;cursor:pointer;}
-.preview{width:100%;aspect-ratio:4/3;background:#0a0a0a;border:1px solid rgba(201,168,76,.25);border-radius:12px;overflow:hidden;margin-bottom:14px;display:flex;align-items:center;justify-content:center;color:var(--text-sub);font-size:14px;position:relative;}
+.card{background:var(--card);border:1.5px solid var(--gold);border-radius:18px;padding:16px;}
+.title{text-align:center;font-size:20px;font-weight:800;color:var(--gold);}
+.sub{text-align:center;font-size:11px;color:#8a7a4a;margin-bottom:14px;}
+.preview{width:100%;aspect-ratio:4/3;background:#0a0a0a;border:1px solid rgba(212,175,55,.25);border-radius:12px;overflow:hidden;margin-bottom:14px;display:flex;align-items:center;justify-content:center;}
 .preview img{width:100%;height:100%;object-fit:contain;}
-.badge{position:absolute;top:8px;right:8px;background:var(--gold);color:#1a1a1a;font-size:10px;padding:3px 8px;border-radius:6px;font-weight:bold;display:none;}
-.tabs{display:flex;gap:6px;margin-bottom:12px;border-bottom:1px solid rgba(201,168,76,.2);padding-bottom:8px;overflow-x:auto;}
-.tab{flex:none;padding:7px 10px;border-radius:8px;font-size:12px;color:var(--text-sub);border:1px solid transparent;white-space:nowrap;cursor:pointer;}
-.tab.active{border-color:var(--gold);color:var(--gold-light);background:rgba(201,168,76,.1);}
-.panel{display:none;}
-.panel.active{display:block;}
 .field{margin-bottom:12px;}
-.field label{display:block;font-size:13px;margin-bottom:5px;color:var(--gold-light);}
-.field input,.field textarea,.field select{width:100%;padding:11px;border-radius:10px;border:1px solid rgba(201,168,76,.35);background:#0f0f0f;color:var(--text-main);font-size:14px;outline:none;}
-.field textarea{resize:vertical;min-height:60px;}
-.check-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
-.check-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-main);}
-.pos-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.pos-item{border:1px solid rgba(201,168,76,.35);border-radius:10px;padding:10px;text-align:center;font-size:13px;cursor:pointer;background:#0f0f0f;}
-.pos-item.active{border-color:var(--gold);color:var(--gold-light);box-shadow:0 0 8px rgba(201,168,76,.3);}
-.preset-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:6px;}
-.preset-item{border:1px solid rgba(201,168,76,.35);border-radius:9px;padding:8px 0;text-align:center;font-size:12px;cursor:pointer;background:#0f0f0f;}
-.preset-item.active{border-color:var(--gold);color:var(--gold-light);}
-.slider-row{margin-top:10px;}
-.slider-row label{font-size:13px;color:var(--gold-light);display:flex;justify-content:space-between;}
-.person-list{margin-top:8px;}
-.person-item{display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(201,168,76,.3);border-radius:10px;padding:9px 11px;margin-bottom:7px;font-size:14px;background:#0f0f0f;}
-.small-btn{border:1px solid var(--gold);background:transparent;color:var(--gold-light);padding:6px 10px;border-radius:8px;font-size:12px;cursor:pointer;}
-.bottom-row{display:flex;gap:10px;margin-top:16px;}
-.reset-btn{flex:1;border:1px solid #b04a4a;color:#ff8a8a;background:rgba(40,10,10,.8);padding:13px;border-radius:12px;font-size:15px;cursor:pointer;}
-.save-btn{flex:1.6;border:1px solid var(--gold);color:#1a1a1a;background:linear-gradient(135deg,var(--gold),var(--gold-light));padding:13px;border-radius:12px;font-size:15px;font-weight:bold;cursor:pointer;}
-.progress{height:6px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:10px;display:none;}
-.progress-bar{height:100%;width:0%;background:linear-gradient(90deg,var(--gold),#9bf2b5);transition:width .2s;}
-.toast{position:fixed;left:50%;top:24px;transform:translateX(-50%);background:rgba(20,15,5,.95);border:1px solid var(--gold);color:var(--gold-light);padding:10px 16px;border-radius:10px;font-size:13px;z-index:9999;display:none;max-width:88%;text-align:center;}
-.hint{font-size:11px;color:var(--text-sub);text-align:center;margin-top:8px;line-height:1.5;}
-.search-row{position:relative;}
-.suggestions{position:absolute;top:100%;left:0;right:0;background:#0f0f0f;border:1px solid rgba(201,168,76,.35);border-radius:0 0 10px 10px;border-top:none;max-height:200px;overflow-y:auto;z-index:10;display:none;}
-.suggestions div{padding:10px 12px;font-size:13px;color:var(--text-main);border-bottom:1px solid rgba(201,168,76,.1);cursor:pointer;}
-.suggestions div:hover{background:rgba(201,168,76,.1);}
+label{font-size:13px;color:var(--gold);display:block;margin-bottom:5px;}
+input,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(212,175,55,.35);background:#0f0f0f;color:var(--text);font-size:14px;}
+.check{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px;}
+.presets{display:flex;gap:8px;margin-bottom:12px;}
+.preset{padding:6px 10px;border-radius:8px;border:1px solid rgba(212,175,55,.35);font-size:12px;cursor:pointer;}
+.preset.active{border-color:var(--gold);color:var(--gold);}
+.slider{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.slider input[type=range]{flex:1;accent-color:var(--gold);}
+.btn{width:100%;padding:13px;border-radius:12px;border:none;font-size:15px;font-weight:800;cursor:pointer;margin-top:10px;}
+.save{background:linear-gradient(135deg,var(--gold),#f9e7a0);color:#1a1a1a;}
+.hint{font-size:11px;color:#8a7a4a;text-align:center;margin-top:8px;}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.85);color:var(--gold);padding:10px 18px;border-radius:10px;font-size:13px;opacity:0;transition:.3s;pointer-events:none;z-index:999;}
+.toast.show{opacity:1;}
 canvas{display:none;}
 </style>
 </head>
@@ -57,226 +35,120 @@ canvas{display:none;}
 <div class="wrap">
   <div class="card">
     <div class="title">磐石水印相机</div>
-    <div class="sub">Fixed · 电脑端强制新窗口保存</div>
-    <div class="upload">
-      <button onclick="triggerCamera()">📷 拍照</button>
-      <button onclick="triggerGallery()">🖼️ 相册</button>
+    <div class="sub">字段对齐 · 黑框自适应 · 认证标可控</div>
+
+    <div class="preview" id="preview">请选择照片</div>
+    <input type="file" id="file" accept="image/*" style="display:none">
+    <button class="btn" onclick="document.getElementById('file').click()">📷 拍照 / 相册</button>
+
+    <div class="field">
+      <label>项目名称</label>
+      <input id="project" value="磐石流量-现场">
     </div>
-    <input type="file" id="file" accept="image/*" capture="environment" style="display:none">
-    <div class="preview" id="preview">
-      请选择照片
-      <div class="badge" id="badge">已添加</div>
+    <div class="field">
+      <label>地点</label>
+      <input id="place" value="朝阳区, 北京市">
     </div>
-    <div class="tabs">
-      <div class="tab active" data-tab="basic">基本信息</div>
-      <div class="tab" data-tab="style">水印样式</div>
-      <div class="tab" data-tab="person">人员</div>
-      <div class="tab" data-tab="advanced">高级</div>
+    <div class="field">
+      <label>备注</label>
+      <textarea id="note">设备运行正常</textarea>
     </div>
-    <div class="panel active" id="panel-basic">
-      <div class="field">
-        <label>项目名称</label>
-        <input id="project" value="磐石流量-现场">
-      </div>
-      <div class="field">
-        <label>备注信息</label>
-        <textarea id="note">设备运行正常，流量稳定达标</textarea>
-      </div>
-      <div class="field search-row">
-        <label>地点（输入自动联想）</label>
-        <input id="placeInput" placeholder="如：北京国贸">
-        <div class="suggestions" id="suggestions"></div>
-      </div>
-      <div class="field">
-        <label><input type="checkbox" id="autoWeather" checked> 自动获取天气</label>
-        <div id="weatherText" style="font-size:12px;color:#9bd8a8;margin-top:4px;">未获取</div>
-      </div>
-      <div class="field">
-        <label><input type="checkbox" id="customTimeChk"> 自定义时间</label>
-        <input type="datetime-local" id="timeInput" style="margin-top:6px;display:none;">
-      </div>
+
+    <div class="check">
+      <input type="checkbox" id="cert">
+      <label for="cert">官方认证标（唯一开关）</label>
     </div>
-    <div class="panel" id="panel-style">
-      <div class="field">
-        <label>水印位置</label>
-        <div class="pos-grid">
-          <div class="pos-item active" data-pos="tl">↖ 左上角</div>
-          <div class="pos-item" data-pos="tr">↗ 右上角</div>
-          <div class="pos-item" data-pos="bl">↙ 左下角</div>
-          <div class="pos-item" data-pos="br">↘ 右下角</div>
-        </div>
-      </div>
-      <div class="field">
-        <label>预设风格</label>
-        <div class="preset-grid">
-          <div class="preset-item active" data-preset="red">经典红条</div>
-          <div class="preset-item" data-preset="black">半透黑底</div>
-          <div class="preset-item" data-preset="gold">黑金尊享</div>
-          <div class="preset-item" data-preset="white">白底黑字</div>
-        </div>
-      </div>
-      <div class="field">
-        <label>显示字段（勾选即显示）</label>
-        <div class="check-grid">
-          <div class="check-item"><input type="checkbox" id="f-project" checked> 项目名称</div>
-          <div class="check-item"><input type="checkbox" id="f-time" checked> 时间</div>
-          <div class="check-item"><input type="checkbox" id="f-date" checked> 日期</div>
-          <div class="check-item"><input type="checkbox" id="f-week" checked> 星期</div>
-          <div class="check-item"><input type="checkbox" id="f-place" checked> 地点</div>
-          <div class="check-item"><input type="checkbox" id="f-weather" checked> 天气气温</div>
-          <div class="check-item"><input type="checkbox" id="f-note" checked> 备注</div>
-          <div class="check-item"><input type="checkbox" id="f-redbar" checked> 红色竖条</div>
-          <div class="check-item"><input type="checkbox" id="f-cert" checked> 官方认证标</div>
-          <div class="check-item"><input type="checkbox" id="f-loc"> 经纬度</div>
-          <div class="check-item"><input type="checkbox" id="f-addr"> 详细地址</div>
-          <div class="check-item"><input type="checkbox" id="f-compass"> 指南针</div>
-        </div>
-      </div>
-      <div class="slider-row">
-        <label>字号 <span id="fontSizeVal">22px</span></label>
-        <input type="range" id="fontSizeRange" min="12" max="42" value="22">
-      </div>
-      <div class="slider-row">
-        <label>不透明度 <span id="opacityVal">72%</span></label>
-        <input type="range" id="opacityRange" min="20" max="100" value="72">
-      </div>
-      <div class="slider-row">
-        <label>圆角 <span id="radiusVal">10px</span></label>
-        <input type="range" id="radiusRange" min="0" max="24" value="10">
-      </div>
+    <div class="check">
+      <input type="checkbox" id="weather" checked>
+      <label for="weather">显示天气</label>
     </div>
-    <div class="panel" id="panel-person">
-      <div class="field">
-        <label>人员列表</label>
-        <div class="person-list" id="personList"></div>
-        <div style="display:flex;gap:8px;margin-top:8px;">
-          <input type="text" id="personName" placeholder="输入姓名">
-          <button class="small-btn" id="addPersonBtn">添加</button>
-        </div>
-      </div>
+
+    <div class="presets">
+      <div class="preset active" onclick="setPreset('red')">经典红条</div>
+      <div class="preset" onclick="setPreset('dark')">半透黑底</div>
+      <div class="preset" onclick="setPreset('white')">白底黑字</div>
     </div>
-    <div class="panel" id="panel-advanced">
-      <div class="field">
-        <label><input type="checkbox" id="advLocation" checked> 启用定位</label>
-      </div>
-      <div class="field">
-        <label><input type="checkbox" id="advWeather" checked> 自动天气</label>
-      </div>
-      <div class="field">
-        <label><input type="checkbox" id="advSeconds"> 时间显示秒数</label>
-      </div>
-      <div class="field">
-        <label><input type="checkbox" id="advCert" checked> 显示官方认证标</label>
-      </div>
-      <div class="field">
-        <label><input type="checkbox" id="advCompress"> 压缩图片（加快保存）</label>
-      </div>
-      <div class="field">
-        <label><input type="checkbox" id="advHD"> 高清输出（文件较大）</label>
-      </div>
+
+    <div class="slider">
+      <label>字号</label>
+      <input type="range" id="font" min="14" max="36" value="22">
     </div>
-    <div class="progress" id="progressBox">
-      <div class="progress-bar" id="progressBar"></div>
-    </div>
-    <div class="bottom-row">
-      <button class="reset-btn" id="resetBtn">🔄 重置</button>
-      <button class="save-btn" id="saveBtn">💾 保存水印照片</button>
-    </div>
-    <div class="hint">
-      PC端保存后会弹出新窗口，请右键图片 → 另存为<br>
-      手机端长按图片存储到相册<br>
-      按 Ctrl+J 可查看下载记录
-    </div>
+
+    <button class="btn save" onclick="save()">💾 保存水印照片</button>
+    <div class="hint">PC：新窗口 → 右键另存为<br>手机：长按保存</div>
   </div>
 </div>
+
 <div class="toast" id="toast"></div>
 <canvas id="cv"></canvas>
+
 <script>
-var img=null, isSaving=false, watermarkPos='bl', watermarkPreset='red', persons=['现场人员A'], placeText='', placeLat=null, placeLon=null, suggestTimer=null;
+var img=null;
+function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+document.getElementById('file').onchange=e=>{
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();r.onload=ev=>{img=new Image();img.onload=()=>document.getElementById('preview').innerHTML='<img src="'+ev.target.result+'">';img.src=ev.target.result;};r.readAsDataURL(f);
+};
 
-function showToast(msg,dur=2500){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur);}
-function setProgress(p){var b=document.getElementById('progressBox'),f=document.getElementById('progressBar');b.style.display=p>0?'block':'none';f.style.width=p+'%';if(p>=100)setTimeout(()=>{b.style.display='none';f.style.width='0%';},600);}
-function triggerCamera(){document.getElementById('file').setAttribute('capture','environment');document.getElementById('file').click();}
-function triggerGallery(){document.getElementById('file').removeAttribute('capture');document.getElementById('file').click();}
+var preset='red';
+function setPreset(p){preset=p;document.querySelectorAll('.preset').forEach(x=>x.classList.remove('active'));event.target.classList.add('active');}
 
-document.getElementById('file').onchange=e=>{var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=ev=>{img=new Image();img.onload=()=>{document.getElementById('preview').innerHTML='<img src="'+ev.target.result+'"><div class="badge" id="badge" style="display:block;">已添加</div>';showToast('✅ 图片已加载');tryGetWeather();};img.src=ev.target.result;};r.readAsDataURL(f);};
-
-document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.getElementById('panel-'+t.dataset.tab).classList.add('active');});
-document.querySelectorAll('.pos-item').forEach(t=>t.onclick=()=>{document.querySelectorAll('.pos-item').forEach(x=>x.classList.remove('active'));t.classList.add('active');watermarkPos=t.dataset.pos;});
-document.querySelectorAll('.preset-item').forEach(t=>t.onclick=()=>{document.querySelectorAll('.preset-item').forEach(x=>x.classList.remove('active'));t.classList.add('active');watermarkPreset=t.dataset.preset;});
-
-['fontSizeRange','opacityRange','radiusRange'].forEach(id=>{var el=document.getElementById(id),out=document.getElementById(id.replace('Range','Val'));el.oninput=()=>out.innerText=el.value+(id==='fontSizeRange'?'px':id==='opacityRange'?'%':'px');});
-
-document.getElementById('customTimeChk').onchange=e=>document.getElementById('timeInput').style.display=e.target.checked?'block':'none';
-
-document.getElementById('placeInput').addEventListener('input',function(){var q=this.value.trim(),sug=document.getElementById('suggestions');clearTimeout(suggestTimer);if(q.length<2){sug.style.display='none';return;}suggestTimer=setTimeout(async()=>{sug.style.display='block';sug.innerHTML='<div>搜索中...</div>';try{var res=await fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(q)+'&limit=5&accept-language=zh',{headers:{'User-Agent':'PanshiWatermark/1.0'}});var data=await res.json();if(!data.length){sug.innerHTML='<div>未找到地点</div>';return;}sug.innerHTML='';data.forEach(item=>{var d=document.createElement('div');d.textContent='📍 '+item.display_name.split(',').slice(0,3).join(',')+' (E'+Number(item.lon).toFixed(5)+', N'+Number(item.lat).toFixed(5)+')';d.onclick=()=>{placeText=item.display_name.split(',').slice(0,3).join(',');placeLon=Number(item.lon);placeLat=Number(item.lat);document.getElementById('placeInput').value=placeText;sug.style.display='none';};sug.appendChild(d);});}catch{sug.innerHTML='<div>搜索失败</div>';}},300);});
-document.addEventListener('click',e=>{if(!e.target.closest('.search-row'))document.getElementById('suggestions').style.display='none';});
-
-function renderPersons(){var box=document.getElementById('personList');box.innerHTML='';persons.forEach((n,i)=>{var d=document.createElement('div');d.className='person-item';d.innerHTML='<span>'+n+'</span>';var b=document.createElement('button');b.className='small-btn';b.innerText='删除';b.onclick=()=>{persons.splice(i,1);renderPersons();};d.appendChild(b);box.appendChild(d);});}
-renderPersons();
-document.getElementById('addPersonBtn').onclick=()=>{var v=document.getElementById('personName').value.trim();if(!v){showToast('请输入姓名');return;}persons.push(v);document.getElementById('personName').value='';renderPersons();};
-document.getElementById('resetBtn').onclick=()=>{document.getElementById('project').value='磐石流量-现场';document.getElementById('note').value='';document.getElementById('placeInput').value='';placeText='';document.getElementById('timeInput').value='';document.getElementById('customTimeChk').checked=false;document.getElementById('timeInput').style.display='none';document.getElementById('preview').innerHTML='请选择照片<div class="badge" id="badge">已添加</div>';img=null;persons=['现场人员A'];renderPersons();showToast('已重置');};
-
-function getNow(){var i=document.getElementById('timeInput').value;if(document.getElementById('customTimeChk').checked&&i)return new Date(i.replace('T',' '));return new Date();}
-function pad2(n){return n<10?'0'+n:n;}
-function fmtTime(now){var s=now.getFullYear()+'-'+pad2(now.getMonth()+1)+'-'+pad2(now.getDate())+' '+pad2(now.getHours())+':'+pad2(now.getMinutes());if(document.getElementById('advSeconds').checked)s+=':'+pad2(now.getSeconds());return s;}
-function weatherDesc(code){if(code===0)return'晴';if(code<=2)return'多云';if(code===3)return'阴';if(code<=48)return'雾';if(code<=67)return'雨';if(code<=77)return'雪';if(code<=82)return'阵雨';if(code>=95)return'雷阵雨';return'天气';}
-function tryGetWeather(){if(!document.getElementById('autoWeather').checked&&!document.getElementById('advWeather').checked)return;if(navigator.geolocation&&document.getElementById('advLocation').checked){navigator.geolocation.getCurrentPosition(p=>fetchWeather(p.coords.latitude,p.coords.longitude),()=>{});}}
-function fetchWeather(lat,lon){fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current=temperature_2m,weather_code&timezone=auto').then(r=>r.json()).then(d=>{if(d&&d.current){var t=d.current.temperature_2m,wc=d.current.weather_code;document.getElementById('weatherText').innerText=weatherDesc(wc)+' '+Math.round(t)+'℃';}}).catch(()=>{});}
-
-function getPresetStyle(p){if(p==='black')return{bg:'rgba(0,0,0,OP)',bar:null,text:'#fff'};if(p==='gold')return{bg:'rgba(20,14,5,OP)',bar:'#ffd66b',text:'#ffe9a8'};if(p==='white')return{bg:'rgba(255,255,255,OP)',bar:null,text:'#111'};return{bg:'rgba(0,0,0,OP)',bar:'#ff4d4d',text:'#fff'};}
-
-document.getElementById('saveBtn').onclick=save;
-function save(){
-  if(isSaving)return;if(!img||!img.complete||!img.naturalWidth){showToast('❌ 请先选择照片');return;}
-  isSaving=true;setProgress(10);
-  var cv=document.getElementById('cv');
-  var MAX=document.getElementById('advHD').checked?4000:2600;
-  var scale=Math.min(1,MAX/Math.max(img.width,img.height));
-  cv.width=Math.max(1,Math.round(img.width*scale));cv.height=Math.max(1,Math.round(img.height*scale));
-  var ctx=cv.getContext('2d');
-  ctx.fillStyle='#000';ctx.fillRect(0,0,cv.width,cv.height);
-  ctx.drawImage(img,0,0,cv.width,cv.height);setProgress(30);
-
-  var now=getNow(),lines=[];
-  if(document.getElementById('f-project').checked)lines.push(document.getElementById('project').value||'磐石流量');
-  if(document.getElementById('f-time').checked)lines.push(fmtTime(now));
-  if(document.getElementById('f-date').checked||document.getElementById('f-week').checked){var dw='';if(document.getElementById('f-date').checked)dw+=now.getFullYear()+'-'+pad2(now.getMonth()+1)+'-'+pad2(now.getDate());if(document.getElementById('f-week').checked)dw+=(dw?' ':'')+['星期日','星期一','星期二','星期三','星期四','星期五','星期六'][now.getDay()];if(dw)lines.push(dw);}
-  if(document.getElementById('f-place').checked&&placeText)lines.push('📍 '+placeText);
-  if(document.getElementById('f-weather').checked){var wt=document.getElementById('weatherText').innerText;if(wt&&wt!=='未获取'&&wt!=='天气获取失败')lines.push('🌡️ '+wt);}
-  if(document.getElementById('f-note').checked){var nt=document.getElementById('note').value;if(nt)lines.push(nt);}
-  if(document.getElementById('f-cert').checked||document.getElementById('advCert').checked)lines.push('✅ 官方认证标');
-  if(persons.length)lines.push('人员：'+persons.join('、'));
-  if(lines.length===0)lines.push('磐石水印');
-
-  var fontSize=parseInt(document.getElementById('fontSizeRange').value),opacity=parseInt(document.getElementById('opacityRange').value)/100,radius=parseInt(document.getElementById('radiusRange').value);
-  var sf=fontSize*(cv.width/480),pad=Math.max(18,cv.width*.018),lh=sf*1.55,bw=Math.max(cv.width*.34,200),bh=lines.length*lh+pad*2;
-  var x=pad,y=cv.height-pad-bh;
-  if(watermarkPos==='tl'){x=pad;y=pad;}else if(watermarkPos==='tr'){x=cv.width-pad-bw;y=pad;}else if(watermarkPos==='br'){x=cv.width-pad-bw;y=cv.height-pad-bh;}
-
-  var style=getPresetStyle(watermarkPreset).bg.replace('OP',opacity);
-  ctx.save();
-  if(radius>0){roundRect(ctx,x,y,bw,bh,radius);ctx.fillStyle=style;ctx.fill();}else{ctx.fillStyle=style;ctx.fillRect(x,y,bw,bh);}
-  if(document.getElementById('f-redbar').checked&&getPresetStyle(watermarkPreset).bar){ctx.fillStyle=getPresetStyle(watermarkPreset).bar;ctx.fillRect(x,y,Math.max(5,cv.width*.006),bh);}
-  ctx.fillStyle=getPresetStyle(watermarkPreset).text;ctx.font='bold '+sf+'px "PingFang SC","Microsoft YaHei",sans-serif';ctx.textBaseline='middle';
-  lines.forEach((l,i)=>ctx.fillText(l,x+pad,y+pad+i*lh+lh/2));ctx.restore();setProgress(70);
-
-  try{
-    var dataURL=cv.toDataURL('image/jpeg',document.getElementById('advCompress').checked?0.8:0.92);
-    var isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if(!isMobile){
-      var win=window.open();
-      if(!win){showToast('❌ 浏览器拦截了弹窗，请允许后重试');isSaving=false;setProgress(0);return;}
-      win.document.write('<html><head><title>磐石水印</title></head><body style="margin:0;background:#000;display:flex;justify-content:center;align-items:center;height:100vh;"><img src="'+dataURL+'" style="max-width:100%;max-height:100%;display:block;"></body></html>');
-      win.document.close();
-      setProgress(100);showToast('✅ 已打开新窗口，请右键图片 → 另存为');isSaving=false;
-    }else{
-      var a=document.createElement('a');a.href=dataURL;a.download='磐石水印_'+Date.now()+'.jpg';document.body.appendChild(a);a.click();document.body.removeChild(a);
-      setProgress(100);showToast('✅ 已触发下载，请长按图片存储');isSaving=false;
-    }
-  }catch(e){showToast('❌ 保存失败：'+e.message);isSaving=false;setProgress(0);}
+function getStyle(){
+  var op=0.72;
+  if(preset==='white')return{bg:'rgba(255,255,255,'+op+')',bar:null,text:'#111'};
+  if(preset==='dark')return{bg:'rgba(0,0,0,'+op+')',bar:null,text:'#fff'};
+  return{bg:'rgba(0,0,0,'+op+')',bar:'#ff4d4d',text:'#fff'};
 }
-function roundRect(ctx,x,y,w,h,r){var rd=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+rd,y);ctx.lineTo(x+w-rd,y);ctx.quadraticCurveTo(x+w,y,x+w,y+rd);ctx.lineTo(x+w,y+h-rd);ctx.quadraticCurveTo(x+w,y+h,x+w-rd,y+h);ctx.lineTo(x+rd,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-rd);ctx.lineTo(x,y+rd);ctx.quadraticCurveTo(x,y,x+rd,y);ctx.closePath();}
+
+function roundRect(ctx,x,y,w,h,r){
+  var rd=Math.min(r,w/2,h/2);
+  ctx.beginPath();ctx.moveTo(x+rd,y);ctx.lineTo(x+w-rd,y);ctx.quadraticCurveTo(x+w,y,x+w,y+rd);
+  ctx.lineTo(x+w,y+h-rd);ctx.quadraticCurveTo(x+w,y+h,x+w-rd,y+h);
+  ctx.lineTo(x+rd,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-rd);
+  ctx.lineTo(x,y+rd);ctx.quadraticCurveTo(x,y,x+rd,y);ctx.closePath();ctx.fill();
+}
+
+async function save(){
+  if(!img){toast('❌ 请先选图');return;}
+  var cv=document.getElementById('cv');
+  var scale=Math.min(1,2800/Math.max(img.width,img.height));
+  cv.width=img.width*scale;cv.height=img.height*scale;
+  var ctx=cv.getContext('2d');
+  ctx.drawImage(img,0,0,cv.width,cv.height);
+
+  var now=new Date();
+  var lines=[
+    document.getElementById('project').value,
+    now.toLocaleString('zh-CN'),
+    document.getElementById('place').value,
+    document.getElementById('note').value
+  ].filter(Boolean);
+
+  if(document.getElementById('cert').checked)lines.push('✅ 官方认证标');
+
+  var fontSize=parseInt(document.getElementById('font').value);
+  var sf=fontSize*(cv.width/420);
+  var pad=20,lh=sf*1.6;
+  ctx.font='bold '+sf+'px sans-serif';
+  var maxW=0;
+  lines.forEach(l=>maxW=Math.max(maxW,ctx.measureText(l).width));
+  var boxW=maxW+pad*2;
+  var boxH=lines.length*lh+pad*2;
+  var x=pad,y=cv.height-pad-boxH;
+
+  var s=getStyle();
+  ctx.save();
+  roundRect(ctx,x,y,boxW,boxH,10);
+  ctx.fillStyle=s.bg;ctx.fill();
+  if(s.bar){ctx.fillStyle=s.bar;ctx.fillRect(x,y,6,boxH);}
+  ctx.fillStyle=s.text;
+  lines.forEach((l,i)=>ctx.fillText(l,x+pad,y+pad+i*lh+lh/2));
+  ctx.restore();
+
+  var win=window.open();
+  win.document.write('<img src="'+cv.toDataURL('image/jpeg',0.92)+'" style="max-width:100%">');
+  toast('✅ 已打开新窗口，右键保存');
+}
 </script>
 </body>
 </html>
