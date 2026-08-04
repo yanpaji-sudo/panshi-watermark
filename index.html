@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>磐石水印相机</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+  body{background:#0b0b0b;font-family:"PingFang SC","Microsoft YaHei",sans-serif;display:flex;justify-content:center;padding:12px;min-height:100vh;color:#e8d8a9}
+  .wrap{max-width:420px;width:100%}
+  .card{background:#121212;border:1.5px solid #c9a84c;border-radius:20px;padding:16px;box-shadow:0 0 40px rgba(201,168,76,.15)}
+  .title{text-align:center;font-size:22px;font-weight:800;color:#f9e7a0;letter-spacing:2px;margin-bottom:6px}
+  .sub{text-align:center;font-size:11px;color:#8a7a4a;margin-bottom:14px}
+  .upload{display:flex;gap:10px;margin-bottom:14px}
+  .upload button{flex:1;padding:12px;border-radius:12px;border:1.5px solid #c9a84c;background:transparent;color:#f9e7a0;font-size:14px;font-weight:700;cursor:pointer}
+  .preview{width:100%;aspect-ratio:4/3;background:#0a0a0a;border:1px solid rgba(201,168,76,.25);border-radius:12px;overflow:hidden;margin-bottom:14px;display:flex;align-items:center;justify-content:center;color:#5a4a1a;font-size:14px}
+  .preview img{width:100%;height:100%;object-fit:contain}
+  .form{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+  .form input,.form select{padding:12px;border-radius:10px;border:1px solid rgba(201,168,76,.35);background:#0f0f0f;color:#f9e7a0;font-size:14px;outline:none}
+  .pos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+  .pos button{padding:10px;border-radius:10px;border:1.5px solid rgba(201,168,76,.35);background:transparent;color:#c9a84c;font-size:13px;cursor:pointer}
+  .pos button.active{background:rgba(201,168,76,.25);border-color:#f9e7a0;color:#f9e7a0}
+  .actions{display:flex;gap:10px}
+  .actions button{flex:1;padding:14px;border-radius:12px;border:none;font-size:15px;font-weight:800;cursor:pointer}
+  .save{background:linear-gradient(135deg,#c9a84c,#f9e7a0);color:#1a1a1a}
+  .loc{background:transparent;border:1.5px solid #c9a84c;color:#c9a84c}
+  .hint{text-align:center;font-size:10px;color:#5a4a1a;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="title">磐石水印相机</div>
+    <div class="sub">照片本地处理 · 不上传服务器</div>
+
+    <div class="upload">
+      <button onclick="triggerCamera()">📷 拍照</button>
+      <button onclick="triggerGallery()">🖼️ 相册</button>
+    </div>
+    <input type="file" id="file" accept="image/*" capture="environment" style="display:none">
+
+    <div class="preview" id="preview">照片预览区</div>
+
+    <div class="form">
+      <input id="project" placeholder="项目名称（如：磐石流量·现场）">
+      <input id="note" placeholder="备注信息（如：设备编号/巡检点）">
+      <select id="style">
+        <option value="dark">半透明黑底白字</option>
+        <option value="gold">黑金风格</option>
+        <option value="light">白底黑字</option>
+      </select>
+    </div>
+
+    <div class="pos">
+      <button data-pos="tl">↖ 左上角</button>
+      <button data-pos="tr">↗ 右上角</button>
+      <button data-pos="bl" class="active">↙ 左下角</button>
+      <button data-pos="br">↘ 右下角</button>
+    </div>
+
+    <div class="actions">
+      <button class="loc" onclick="getLocation()">📍 定位</button>
+      <button class="save" onclick="save()">⬇️ 保存水印照片</button>
+    </div>
+
+    <div class="hint">定位信息仅用于水印，不会上传</div>
+  </div>
+</div>
+
+<canvas id="cv" style="display:none"></canvas>
+
+<script>
+let img=null, pos='bl', locText='';
+
+// 选择位置
+document.querySelectorAll('.pos button').forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll('.pos button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    pos=btn.dataset.pos;
+  };
+});
+
+function triggerCamera(){document.getElementById('file').setAttribute('capture','environment');document.getElementById('file').click();}
+function triggerGallery(){document.getElementById('file').removeAttribute('capture');document.getElementById('file').click();}
+
+document.getElementById('file').onchange=e=>{
+  const f=e.target.files[0];
+  if(!f)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    img=new Image();
+    img.onload=()=>{
+      document.getElementById('preview').innerHTML=`<img src="${ev.target.result}">`;
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(f);
+};
+
+function getLocation(){
+  if(!navigator.geolocation)return alert('浏览器不支持定位');
+  navigator.geolocation.getCurrentPosition(p=>{
+    locText=`经纬度：${p.coords.longitude.toFixed(6)}, ${p.coords.latitude.toFixed(6)}`;
+    alert('定位成功');
+  },()=>alert('定位失败，请允许定位权限'));
+}
+
+function save(){
+  if(!img)return alert('请先拍照或选择照片');
+  const cv=document.getElementById('cv');
+  cv.width=img.width;cv.height=img.height;
+  const ctx=cv.getContext('2d');
+  ctx.drawImage(img,0,0);
+
+  const project=document.getElementById('project').value||'磐石流量';
+  const note=document.getElementById('note').value||'现场记录';
+  const time=new Date().toLocaleString('zh-CN');
+  const style=document.getElementById('style').value;
+
+  let bg,fg;
+  if(style==='gold'){bg='rgba(201,168,76,0.85)';fg='#1a1a1a';}
+  else if(style==='light'){bg='rgba(255,255,255,0.9)';fg='#1a1a1a';}
+  else{bg='rgba(0,0,0,0.65)';fg='#ffffff';}
+
+  const pad=Math.max(24,img.width*0.02);
+  const lineH=Math.max(28,img.width*0.018);
+  const fontSize=Math.max(18,img.width*0.012);
+  ctx.font=`${fontSize}px PingFang SC, Microsoft YaHei`;
+
+  const lines=[project,time,note,locText].filter(Boolean);
+  const boxW=Math.max(img.width*0.32,180);
+  const boxH=lines.length*lineH+pad*2;
+
+  let x,y;
+  if(pos==='tl'){x=pad;y=pad;}
+  if(pos==='tr'){x=img.width-pad-boxW;y=pad;}
+  if(pos==='bl'){x=pad;y=img.height-pad-boxH;}
+  if(pos==='br'){x=img.width-pad-boxW;y=img.height-pad-boxH;}
+
+  ctx.fillStyle=bg;
+  ctx.fillRect(x,y,boxW,boxH);
+
+  ctx.fillStyle=fg;
+  lines.forEach((line,i)=>{
+    ctx.fillText(line,x+pad,y+pad+(i+1)*lineH-lineH*0.3);
+  });
+
+  const link=document.createElement('a');
+  link.download=`磐石水印_${Date.now()}.jpg`;
+  link.href=cv.toDataURL('image/jpeg',0.92);
+  link.click();
+}
+</script>
+</body>
+</html>
