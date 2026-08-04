@@ -17,13 +17,12 @@
   .preview img{width:100%;height:100%;object-fit:contain}
   .form{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
   .form input,.form select{padding:12px;border-radius:10px;border:1px solid rgba(201,168,76,.35);background:#0f0f0f;color:#f9e7a0;font-size:14px;outline:none}
-  .search-row{display:flex;gap:8px}
-  .search-row input{flex:1}
-  .search-row button{padding:0 14px;border-radius:10px;border:1.5px solid #c9a84c;background:rgba(201,168,76,.15);color:#f9e7a0;font-size:13px;cursor:pointer;white-space:nowrap}
-  .suggestions{background:#0f0f0f;border:1px solid rgba(201,168,76,.25);border-radius:10px;max-height:160px;overflow-y:auto;margin-top:-6px;margin-bottom:8px;display:none}
+  .search-row{position:relative}
+  .search-row input{width:100%}
+  .suggestions{position:absolute;top:100%;left:0;right:0;background:#0f0f0f;border:1px solid rgba(201,168,76,.35);border-radius:0 0 10px 10px;border-top:none;max-height:200px;overflow-y:auto;z-index:10;display:none}
   .suggestions div{padding:10px 12px;font-size:13px;color:#e8d8a9;border-bottom:1px solid rgba(201,168,76,.1);cursor:pointer}
   .suggestions div:last-child{border-bottom:0}
-  .suggestions div:hover{background:rgba(201,168,76,.1)}
+  .suggestions div:hover,.suggestions div.active{background:rgba(201,168,76,.15)}
   .pos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
   .pos button{padding:10px;border-radius:10px;border:1.5px solid rgba(201,168,76,.35);background:transparent;color:#c9a84c;font-size:13px;cursor:pointer}
   .pos button.active{background:rgba(201,168,76,.25);border-color:#f9e7a0;color:#f9e7a0}
@@ -52,10 +51,9 @@
       <input id="note" placeholder="备注信息（如：设备编号/巡检点）">
 
       <div class="search-row">
-        <input id="placeInput" placeholder="搜索地点（如：北京国贸）">
-        <button onclick="searchPlace()">🔍 搜索</button>
+        <input id="placeInput" placeholder="输入地点自动提示（如：北京国贸）" autocomplete="off">
+        <div class="suggestions" id="suggestions"></div>
       </div>
-      <div class="suggestions" id="suggestions"></div>
 
       <select id="style">
         <option value="dark">半透明黑底白字</option>
@@ -75,15 +73,18 @@
       <button class="save" onclick="save()">⬇️ 保存水印照片</button>
     </div>
 
-    <div class="hint">地点为手动搜索/输入，不会自动获取定位</div>
+    <div class="hint">输入地点自动联想，点击选择即可</div>
   </div>
 </div>
 
 <canvas id="cv" style="display:none"></canvas>
 
 <script>
-let img=null, pos='bl', placeText='';
+let img=null, pos='bl';
+let placeText='', placeLat=null, placeLon=null;
+let suggestTimer=null, selectedIndex=-1;
 
+// 位置选择
 document.querySelectorAll('.pos button').forEach(btn=>{
   btn.onclick=()=>{
     document.querySelectorAll('.pos button').forEach(b=>b.classList.remove('active'));
@@ -106,35 +107,69 @@ document.getElementById('file').onchange=e=>{
   reader.readAsDataURL(f);
 };
 
-// 支持回车搜索
-document.getElementById('placeInput').addEventListener('keydown',e=>{if(e.key==='Enter')searchPlace();});
-
-async function searchPlace(){
-  const q=document.getElementById('placeInput').value.trim();
-  if(!q)return;
+// 输入联想（核心）
+document.getElementById('placeInput').addEventListener('input',onPlaceInput);
+document.getElementById('placeInput').addEventListener('keydown',function(e){
   const sug=document.getElementById('suggestions');
-  sug.style.display='block';
-  sug.innerHTML='<div>搜索中…</div>';
-  try{
-    const url='https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(q)+'&limit=5&accept-language=zh';
-    const res=await fetch(url,{headers:{'User-Agent':'PanshiWatermark/1.0'}});
-    const data=await res.json();
-    if(!data.length){sug.innerHTML='<div>未找到地点，可手动输入</div>';return;}
-    sug.innerHTML='';
-    data.forEach(item=>{
-      const div=document.createElement('div');
-      div.textContent=item.display_name;
-      div.onclick=()=>{
-        placeText=item.display_name.split(',').slice(0,3).join(',');
-        document.getElementById('placeInput').value=placeText;
-        sug.style.display='none';
-      };
-      sug.appendChild(div);
-    });
-  }catch(err){
-    sug.innerHTML='<div>搜索失败，可手动输入地点名</div>';
-  }
+  const items=sug.querySelectorAll('div');
+  if(e.key==='ArrowDown'){e.preventDefault();selectedIndex=Math.min(selectedIndex+1,items.length-1);updateActive(items);}
+  else if(e.key==='ArrowUp'){e.preventDefault();selectedIndex=Math.max(selectedIndex-1,0);updateActive(items);}
+  else if(e.key==='Enter'){e.preventDefault();if(selectedIndex>=0 && items[selectedIndex])items[selectedIndex].click();}
+});
+
+function updateActive(items){
+  items.forEach((item,i)=>item.classList.toggle('active',i===selectedIndex));
 }
+
+async function onPlaceInput(){
+  const input=document.getElementById('placeInput');
+  const q=input.value.trim();
+  const sug=document.getElementById('suggestions');
+  clearTimeout(suggestTimer);
+  selectedIndex=-1;
+
+  if(q.length<2){
+    sug.style.display='none';
+    placeText='';placeLat=null;placeLon=null;
+    return;
+  }
+
+  suggestTimer=setTimeout(async ()=>{
+    sug.style.display='block';
+    sug.innerHTML='<div>搜索中…</div>';
+    try{
+      const url='https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(q)+'&limit=6&accept-language=zh';
+      const res=await fetch(url,{headers:{'User-Agent':'PanshiWatermark/1.0'}});
+      const data=await res.json();
+      if(!data.length){sug.innerHTML='<div>未找到地点，可继续输入</div>';return;}
+      sug.innerHTML='';
+      data.forEach(item=>{
+        const div=document.createElement('div');
+        const shortName=item.display_name.split(',').slice(0,3).join(',');
+        div.textContent='📍 '+shortName+'  (E'+Number(item.lon).toFixed(5)+', N'+Number(item.lat).toFixed(5)+')';
+        div.onclick=()=>{
+          placeText=shortName;
+          placeLon=Number(item.lon);
+          placeLat=Number(item.lat);
+          input.value=placeText;
+          sug.style.display='none';
+          selectedIndex=-1;
+        };
+        sug.appendChild(div);
+      });
+    }catch(err){
+      sug.innerHTML='<div>搜索失败，可继续输入</div>';
+    }
+  },300);
+}
+
+// 点击空白关闭
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.search-row')){
+    document.getElementById('suggestions').style.display='none';
+    selectedIndex=-1;
+  }
+});
 
 function save(){
   if(!img)return alert('请先拍照或选择照片');
@@ -147,20 +182,34 @@ function save(){
   const note=document.getElementById('note').value||'现场记录';
   const time=new Date().toLocaleString('zh-CN');
   const style=document.getElementById('style').value;
-  const place=placeText||document.getElementById('placeInput').value||'';
+  const manualPlace=document.getElementById('placeInput').value||'';
+
+  let placeLine='';
+  if(placeText){
+    placeLine='📍 '+placeText;
+    if(placeLat!==null && placeLon!==null){
+      placeLine+='\nE'+placeLon.toFixed(5)+', N'+placeLat.toFixed(5);
+    }
+  }else if(manualPlace){
+    placeLine='📍 '+manualPlace;
+  }
 
   let bg,fg;
-  if(style==='gold'){bg='rgba(201,168,76,0.85)';fg='#1a1a1a';}
-  else if(style==='light'){bg='rgba(255,255,255,0.9)';fg='#1a1a1a';}
-  else{bg='rgba(0,0,0,0.65)';fg='#ffffff';}
+  if(style==='gold'){bg='rgba(201,168,76,0.88)';fg='#1a1a1a';}
+  else if(style==='light'){bg='rgba(255,255,255,0.92)';fg='#1a1a1a';}
+  else{bg='rgba(0,0,0,0.68)';fg='#ffffff';}
 
   const pad=Math.max(24,img.width*0.02);
-  const lineH=Math.max(28,img.width*0.018);
-  const fontSize=Math.max(18,img.width*0.012);
-  ctx.font=`${fontSize}px PingFang SC, Microsoft YaHei`;
+  const lineH=Math.max(30,img.width*0.02);
+  const fontSize=Math.max(18,img.width*0.013);
+  ctx.font=`${fontSize}px "PingFang SC","Microsoft YaHei"`;
 
-  const lines=[project,time,note,place].filter(Boolean);
-  const boxW=Math.max(img.width*0.32,180);
+  const rawLines=[project,time,note].filter(Boolean);
+  if(placeLine)rawLines.push(placeLine);
+  const lines=[];
+  rawLines.forEach(l=>{if(l.includes('\n')){l.split('\n').forEach(x=>x&&lines.push(x));}else{lines.push(l);}});
+
+  const boxW=Math.max(img.width*0.36,200);
   const boxH=lines.length*lineH+pad*2;
 
   let x,y;
@@ -172,7 +221,7 @@ function save(){
   ctx.fillStyle=bg;ctx.fillRect(x,y,boxW,boxH);
   ctx.fillStyle=fg;
   lines.forEach((line,i)=>{
-    ctx.fillText(line,x+pad,y+pad+(i+1)*lineH-lineH*0.3);
+    ctx.fillText(line,x+pad,y+pad+(i+1)*lineH-lineH*0.25);
   });
 
   const link=document.createElement('a');
