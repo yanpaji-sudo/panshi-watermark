@@ -17,13 +17,19 @@
   .preview img{width:100%;height:100%;object-fit:contain}
   .form{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
   .form input,.form select{padding:12px;border-radius:10px;border:1px solid rgba(201,168,76,.35);background:#0f0f0f;color:#f9e7a0;font-size:14px;outline:none}
+  .search-row{display:flex;gap:8px}
+  .search-row input{flex:1}
+  .search-row button{padding:0 14px;border-radius:10px;border:1.5px solid #c9a84c;background:rgba(201,168,76,.15);color:#f9e7a0;font-size:13px;cursor:pointer;white-space:nowrap}
+  .suggestions{background:#0f0f0f;border:1px solid rgba(201,168,76,.25);border-radius:10px;max-height:160px;overflow-y:auto;margin-top:-6px;margin-bottom:8px;display:none}
+  .suggestions div{padding:10px 12px;font-size:13px;color:#e8d8a9;border-bottom:1px solid rgba(201,168,76,.1);cursor:pointer}
+  .suggestions div:last-child{border-bottom:0}
+  .suggestions div:hover{background:rgba(201,168,76,.1)}
   .pos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
   .pos button{padding:10px;border-radius:10px;border:1.5px solid rgba(201,168,76,.35);background:transparent;color:#c9a84c;font-size:13px;cursor:pointer}
   .pos button.active{background:rgba(201,168,76,.25);border-color:#f9e7a0;color:#f9e7a0}
   .actions{display:flex;gap:10px}
   .actions button{flex:1;padding:14px;border-radius:12px;border:none;font-size:15px;font-weight:800;cursor:pointer}
   .save{background:linear-gradient(135deg,#c9a84c,#f9e7a0);color:#1a1a1a}
-  .loc{background:transparent;border:1.5px solid #c9a84c;color:#c9a84c}
   .hint{text-align:center;font-size:10px;color:#5a4a1a;margin-top:10px}
 </style>
 </head>
@@ -44,6 +50,13 @@
     <div class="form">
       <input id="project" placeholder="项目名称（如：磐石流量·现场）">
       <input id="note" placeholder="备注信息（如：设备编号/巡检点）">
+
+      <div class="search-row">
+        <input id="placeInput" placeholder="搜索地点（如：北京国贸）">
+        <button onclick="searchPlace()">🔍 搜索</button>
+      </div>
+      <div class="suggestions" id="suggestions"></div>
+
       <select id="style">
         <option value="dark">半透明黑底白字</option>
         <option value="gold">黑金风格</option>
@@ -59,20 +72,18 @@
     </div>
 
     <div class="actions">
-      <button class="loc" onclick="getLocation()">📍 定位</button>
       <button class="save" onclick="save()">⬇️ 保存水印照片</button>
     </div>
 
-    <div class="hint">定位信息仅用于水印，不会上传</div>
+    <div class="hint">地点为手动搜索/输入，不会自动获取定位</div>
   </div>
 </div>
 
 <canvas id="cv" style="display:none"></canvas>
 
 <script>
-let img=null, pos='bl', locText='';
+let img=null, pos='bl', placeText='';
 
-// 选择位置
 document.querySelectorAll('.pos button').forEach(btn=>{
   btn.onclick=()=>{
     document.querySelectorAll('.pos button').forEach(b=>b.classList.remove('active'));
@@ -85,25 +96,44 @@ function triggerCamera(){document.getElementById('file').setAttribute('capture',
 function triggerGallery(){document.getElementById('file').removeAttribute('capture');document.getElementById('file').click();}
 
 document.getElementById('file').onchange=e=>{
-  const f=e.target.files[0];
-  if(!f)return;
+  const f=e.target.files[0];if(!f)return;
   const reader=new FileReader();
   reader.onload=ev=>{
     img=new Image();
-    img.onload=()=>{
-      document.getElementById('preview').innerHTML=`<img src="${ev.target.result}">`;
-    };
+    img.onload=()=>{document.getElementById('preview').innerHTML=`<img src="${ev.target.result}">`;};
     img.src=ev.target.result;
   };
   reader.readAsDataURL(f);
 };
 
-function getLocation(){
-  if(!navigator.geolocation)return alert('浏览器不支持定位');
-  navigator.geolocation.getCurrentPosition(p=>{
-    locText=`经纬度：${p.coords.longitude.toFixed(6)}, ${p.coords.latitude.toFixed(6)}`;
-    alert('定位成功');
-  },()=>alert('定位失败，请允许定位权限'));
+// 支持回车搜索
+document.getElementById('placeInput').addEventListener('keydown',e=>{if(e.key==='Enter')searchPlace();});
+
+async function searchPlace(){
+  const q=document.getElementById('placeInput').value.trim();
+  if(!q)return;
+  const sug=document.getElementById('suggestions');
+  sug.style.display='block';
+  sug.innerHTML='<div>搜索中…</div>';
+  try{
+    const url='https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(q)+'&limit=5&accept-language=zh';
+    const res=await fetch(url,{headers:{'User-Agent':'PanshiWatermark/1.0'}});
+    const data=await res.json();
+    if(!data.length){sug.innerHTML='<div>未找到地点，可手动输入</div>';return;}
+    sug.innerHTML='';
+    data.forEach(item=>{
+      const div=document.createElement('div');
+      div.textContent=item.display_name;
+      div.onclick=()=>{
+        placeText=item.display_name.split(',').slice(0,3).join(',');
+        document.getElementById('placeInput').value=placeText;
+        sug.style.display='none';
+      };
+      sug.appendChild(div);
+    });
+  }catch(err){
+    sug.innerHTML='<div>搜索失败，可手动输入地点名</div>';
+  }
 }
 
 function save(){
@@ -117,6 +147,7 @@ function save(){
   const note=document.getElementById('note').value||'现场记录';
   const time=new Date().toLocaleString('zh-CN');
   const style=document.getElementById('style').value;
+  const place=placeText||document.getElementById('placeInput').value||'';
 
   let bg,fg;
   if(style==='gold'){bg='rgba(201,168,76,0.85)';fg='#1a1a1a';}
@@ -128,7 +159,7 @@ function save(){
   const fontSize=Math.max(18,img.width*0.012);
   ctx.font=`${fontSize}px PingFang SC, Microsoft YaHei`;
 
-  const lines=[project,time,note,locText].filter(Boolean);
+  const lines=[project,time,note,place].filter(Boolean);
   const boxW=Math.max(img.width*0.32,180);
   const boxH=lines.length*lineH+pad*2;
 
@@ -138,9 +169,7 @@ function save(){
   if(pos==='bl'){x=pad;y=img.height-pad-boxH;}
   if(pos==='br'){x=img.width-pad-boxW;y=img.height-pad-boxH;}
 
-  ctx.fillStyle=bg;
-  ctx.fillRect(x,y,boxW,boxH);
-
+  ctx.fillStyle=bg;ctx.fillRect(x,y,boxW,boxH);
   ctx.fillStyle=fg;
   lines.forEach((line,i)=>{
     ctx.fillText(line,x+pad,y+pad+(i+1)*lineH-lineH*0.3);
