@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>磐石水印相机 Pro</title>
+<title>磐石水印相机 Fixed</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
 body{background:#0b0b0b;font-family:"PingFang SC","Microsoft YaHei",sans-serif;display:flex;justify-content:center;padding:12px;min-height:100vh;color:#e8d8a9}
@@ -39,7 +39,7 @@ body{background:#0b0b0b;font-family:"PingFang SC","Microsoft YaHei",sans-serif;d
 <div class="wrap">
   <div class="card">
     <div class="title">磐石水印相机</div>
-    <div class="sub">专业版 · PC 下载已修复</div>
+    <div class="sub">Fixed 版 · PC 下载已修复</div>
     <div class="upload">
       <button onclick="triggerCamera()">📷 拍照</button>
       <button onclick="triggerGallery()">🖼️ 相册</button>
@@ -68,7 +68,7 @@ body{background:#0b0b0b;font-family:"PingFang SC","Microsoft YaHei",sans-serif;d
 let img=null, pos='bl', placeText='', placeLat=null, placeLon=null;
 let suggestTimer=null, isSaving=false;
 
-function showToast(msg,dur=2000){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur);}
+function showToast(msg,dur=2500){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur);}
 function setProgress(p){const bar=document.getElementById('progressBar'),fill=document.getElementById('progressFill');bar.style.display=p>0?'block':'none';fill.style.width=p+'%';}
 function triggerCamera(){document.getElementById('file').setAttribute('capture','environment');document.getElementById('file').click();}
 function triggerGallery(){document.getElementById('file').removeAttribute('capture');document.getElementById('file').click();}
@@ -106,7 +106,7 @@ document.getElementById('placeInput').addEventListener('input',function(){
         };
         sug.appendChild(div);
       });
-    }catch{ sug.innerHTML='<div>搜索失败</div>'; }
+    }catch{sug.innerHTML='<div>搜索失败</div>';}
   },300);
 });
 
@@ -117,6 +117,7 @@ function save(){
   if(!img || !img.complete || !img.naturalWidth){showToast('❌ 请先选择照片');return;}
   isSaving=true;
   setProgress(10);
+
   const cv=document.getElementById('cv');
   const MAX_DIM=3000;
   const scale=Math.min(1, MAX_DIM/Math.max(img.width,img.height));
@@ -127,10 +128,11 @@ function save(){
 
   const project=document.getElementById('project').value||'磐石流量';
   const note=document.getElementById('note').value||'现场记录';
-  const time=new Date().toLocaleString('zh-CN');
-  const dateStr=new Date().toLocaleDateString('zh-CN');
+  const now=new Date();
+  const time=now.toLocaleString('zh-CN');
+  const dateStr=now.toLocaleDateString('zh-CN');
   const weekArr=['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
-  const week=weekArr[new Date().getDay()];
+  const week=weekArr[now.getDay()];
   const place=placeText||document.getElementById('placeInput').value||'';
   const lines=[project, time, dateStr+' '+week, place, note].filter(Boolean);
 
@@ -141,7 +143,7 @@ function save(){
 
   const boxW=Math.max(cv.width*0.36,220);
   const boxH=lines.length*lineH+pad*2;
-  let x=pad,y=cv.height-pad-boxH;
+  let x=pad, y=cv.height-pad-boxH;
   
   ctx.fillStyle='rgba(0,0,0,0.65)';ctx.fillRect(x,y,boxW,boxH);
   ctx.fillStyle='#f9e7a0';ctx.fillRect(x,y,6,boxH);
@@ -149,20 +151,22 @@ function save(){
   lines.forEach((line,i)=>{ctx.fillText(line,x+pad,y+pad+(i+1)*lineH-lineH*0.3);});
   setProgress(60);
 
+  // ===== PC 稳下载核心 =====
   setTimeout(()=>{
     try{
       if(cv.toBlob){
         cv.toBlob(function(blob){
           if(!blob){fallback();return;}
           const url=URL.createObjectURL(blob);
-          const link=document.createElement('a');
-          link.href=url;
-          link.download='磐石水印_'+Date.now()+'.jpg';
-          link.style.display='none';
-          document.body.appendChild(link);
-          const evt=new MouseEvent('click',{bubbles:true,cancelable:true,view:window});
-          link.dispatchEvent(evt);
-          document.body.removeChild(link);
+          const a=document.createElement('a');
+          a.href=url;
+          a.download='磐石水印_'+Date.now()+'.jpg';
+          a.style.display='none';
+          document.body.appendChild(a);
+          // 关键：用 dispatchEvent 代替 click()
+          a.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,view:window}));
+          document.body.removeChild(a);
+          // 延迟释放，给浏览器充足时间
           setTimeout(()=>{URL.revokeObjectURL(url);setProgress(100);showToast('✅ 保存成功！请查看下载栏');isSaving=false;},5000);
         },'image/jpeg',0.92);
       }else{fallback();}
@@ -172,10 +176,10 @@ function save(){
   function fallback(){
     try{
       const dataURL=cv.toDataURL('image/jpeg',0.92);
-      const link=document.createElement('a');
-      link.download='磐石水印_'+Date.now()+'.jpg';
-      link.href=dataURL;
-      document.body.appendChild(link);link.click();document.body.removeChild(link);
+      const a=document.createElement('a');
+      a.download='磐石水印_'+Date.now()+'.jpg';
+      a.href=dataURL;
+      document.body.appendChild(a);a.click();document.body.removeChild(a);
       setProgress(100);showToast('✅ 保存成功（备用通道）');isSaving=false;
     }catch(e2){setProgress(0);showToast('❌ 保存失败');isSaving=false;}
   }
