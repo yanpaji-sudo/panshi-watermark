@@ -3,170 +3,181 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>磐石水印相机</title>
+<title>磐石水印相机 Pro</title>
 <style>
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
-  body{background:#0b0b0b;font-family:"PingFang SC","Microsoft YaHei",sans-serif;display:flex;justify-content:center;padding:12px;min-height:100vh;color:#e8d8a9}
-  .wrap{max-width:420px;width:100%}
-  .card{background:#121212;border:1.5px solid #c9a84c;border-radius:20px;padding:16px;box-shadow:0 0 40px rgba(201,168,76,.15)}
-  .title{text-align:center;font-size:22px;font-weight:800;color:#f9e7a0;letter-spacing:2px;margin-bottom:6px}
-  .sub{text-align:center;font-size:11px;color:#8a7a4a;margin-bottom:14px}
-  .upload{display:flex;gap:10px;margin-bottom:14px}
-  .upload button{flex:1;padding:12px;border-radius:12px;border:1.5px solid #c9a84c;background:transparent;color:#f9e7a0;font-size:14px;font-weight:700;cursor:pointer}
-  .preview{width:100%;aspect-ratio:4/3;background:#0a0a0a;border:1px solid rgba(201,168,76,.25);border-radius:12px;overflow:hidden;margin-bottom:14px;display:flex;align-items:center;justify-content:center;color:#5a4a1a;font-size:14px}
-  .preview img{width:100%;height:100%;object-fit:contain}
-  .form{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
-  .form input,.form select{padding:12px;border-radius:10px;border:1px solid rgba(201,168,76,.35);background:#0f0f0f;color:#f9e7a0;font-size:14px;outline:none}
-  .actions{display:flex;gap:10px}
-  .actions button{flex:1;padding:14px;border-radius:12px;border:none;font-size:15px;font-weight:800;cursor:pointer}
-  .demo{background:rgba(201,168,76,.15);color:#c9a84c}
-  .save{background:linear-gradient(135deg,#c9a84c,#f9e7a0);color:#1a1a1a}
-  .hint{text-align:center;font-size:10px;color:#5a4a1a;margin-top:10px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+body{background:#0b0b0b;font-family:"PingFang SC","Microsoft YaHei",sans-serif;display:flex;justify-content:center;padding:12px;min-height:100vh;color:#e8d8a9}
+.wrap{max-width:420px;width:100%}
+.card{background:#121212;border:1.5px solid #c9a84c;border-radius:20px;padding:16px;box-shadow:0 0 40px rgba(201,168,76,.15)}
+.title{text-align:center;font-size:22px;font-weight:800;color:#f9e7a0;letter-spacing:2px;margin-bottom:6px}
+.sub{text-align:center;font-size:11px;color:#8a7a4a;margin-bottom:14px}
+.upload{display:flex;gap:10px;margin-bottom:14px}
+.upload button{flex:1;padding:12px;border-radius:12px;border:1.5px solid #c9a84c;background:transparent;color:#f9e7a0;font-size:14px;font-weight:700;cursor:pointer}
+.preview{width:100%;aspect-ratio:4/3;background:#0a0a0a;border:1px solid rgba(201,168,76,.25);border-radius:12px;overflow:hidden;margin-bottom:14px;display:flex;align-items:center;justify-content:center;color:#5a4a1a;font-size:14px}
+.preview img{width:100%;height:100%;object-fit:contain}
+.form{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.form input,.form select{padding:12px;border-radius:10px;border:1px solid rgba(201,168,76,.35);background:#0f0f0f;color:#f9e7a0;font-size:14px;outline:none}
+.search-row{position:relative}
+.suggestions{position:absolute;top:100%;left:0;right:0;background:#0f0f0f;border:1px solid rgba(201,168,76,.35);border-radius:0 0 10px 10px;border-top:none;max-height:200px;overflow-y:auto;z-index:10;display:none}
+.suggestions div{padding:10px 12px;font-size:13px;color:#e8d8a9;border-bottom:1px solid rgba(201,168,76,.1);cursor:pointer}
+.suggestions div:last-child{border-bottom:0}
+.suggestions div:hover{background:rgba(201,168,76,.1)}
+.pos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.pos button{padding:10px;border-radius:10px;border:1.5px solid rgba(201,168,76,.35);background:transparent;color:#c9a84c;font-size:13px;cursor:pointer}
+.pos button.active{background:rgba(201,168,76,.25);border-color:#f9e7a0;color:#f9e7a0}
+.actions{display:flex;gap:10px}
+.actions button{flex:1;padding:14px;border-radius:12px;border:none;font-size:15px;font-weight:800;cursor:pointer}
+.save{background:linear-gradient(135deg,#c9a84c,#f9e7a0);color:#1a1a1a}
+.hint{text-align:center;font-size:10px;color:#5a4a1a;margin-top:10px}
+.progress-bar{height:4px;background:rgba(201,168,76,.2);border-radius:2px;overflow:hidden;margin-top:10px;display:none}
+.progress-bar .fill{height:100%;width:0%;background:#f9e7a0;transition:width .3s}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.85);color:#f9e7a0;padding:12px 20px;border-radius:10px;font-size:14px;z-index:100;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="card">
     <div class="title">磐石水印相机</div>
-    <div class="sub">修复版 · 点击保存必响应</div>
-
+    <div class="sub">专业版 · PC 下载已修复</div>
     <div class="upload">
-      <button onclick="document.getElementById('file').click()">📷 拍照/相册</button>
-      <button class="demo" onclick="loadDemo()">🎯 演示照片</button>
+      <button onclick="triggerCamera()">📷 拍照</button>
+      <button onclick="triggerGallery()">🖼️ 相册</button>
     </div>
     <input type="file" id="file" accept="image/*" capture="environment" style="display:none">
-
-    <div class="preview" id="preview">请选择照片或点演示</div>
-
+    <div class="preview" id="preview">请选择照片</div>
     <div class="form">
       <input id="project" placeholder="项目名称（如：磐石流量·现场）">
-      <input id="note" placeholder="备注信息（如：设备运行正常）">
+      <input id="note" placeholder="备注信息（如：设备编号）">
+      <div class="search-row">
+        <input id="placeInput" placeholder="输入地点自动提示（如：北京国贸）" autocomplete="off">
+        <div class="suggestions" id="suggestions"></div>
+      </div>
     </div>
-
     <div class="actions">
       <button class="save" onclick="save()">⬇️ 保存水印照片</button>
     </div>
-
-    <div class="hint">如 iOS 未自动保存，请长按打开的图片 → 存储到照片</div>
+    <div class="progress-bar" id="progressBar"><div class="fill" id="progressFill"></div></div>
+    <div class="hint">PC端点击保存后，请查看浏览器右上角下载栏</div>
   </div>
 </div>
-
+<div class="toast" id="toast"></div>
 <canvas id="cv" style="display:none"></canvas>
 
 <script>
-var currentImg = null;
+let img=null, pos='bl', placeText='', placeLat=null, placeLon=null;
+let suggestTimer=null, isSaving=false;
 
-// 加载演示照片（Canvas 生成，完全离线）
-function loadDemo(){
-  var cv = document.createElement('canvas');
-  cv.width = 1200; cv.height = 900;
-  var ctx = cv.getContext('2d');
+function showToast(msg,dur=2000){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur);}
+function setProgress(p){const bar=document.getElementById('progressBar'),fill=document.getElementById('progressFill');bar.style.display=p>0?'block':'none';fill.style.width=p+'%';}
+function triggerCamera(){document.getElementById('file').setAttribute('capture','environment');document.getElementById('file').click();}
+function triggerGallery(){document.getElementById('file').removeAttribute('capture');document.getElementById('file').click();}
 
-  // 天空
-  var grd = ctx.createLinearGradient(0,0,0,900);
-  grd.addColorStop(0,'#87CEEB');grd.addColorStop(1,'#E0F6FF');
-  ctx.fillStyle = grd; ctx.fillRect(0,0,1200,900);
-
-  // 草地
-  ctx.fillStyle = '#7CFC00'; ctx.fillRect(0,600,1200,300);
-
-  // 树
-  ctx.fillStyle = '#8B4513'; ctx.fillRect(300,500,40,100);
-  ctx.fillStyle = '#228B22'; ctx.beginPath(); ctx.arc(320,480,60,0,Math.PI*2); ctx.fill();
-
-  // 太阳
-  ctx.fillStyle = '#FFD700'; ctx.beginPath(); ctx.arc(1000,120,50,0,Math.PI*2); ctx.fill();
-
-  // 建筑
-  ctx.fillStyle = '#888'; ctx.fillRect(800,400,200,200);
-
-  currentImg = new Image();
-  currentImg.onload = function(){
-    document.getElementById('preview').innerHTML = '<img src="'+cv.toDataURL()+'">';
-    alert('✅ 演示照片加载成功');
-  };
-  currentImg.src = cv.toDataURL();
-}
-
-// 选择照片
-document.getElementById('file').onchange = function(e){
-  var f = e.target.files[0];
-  if(!f) return;
-  var reader = new FileReader();
-  reader.onload = function(ev){
-    currentImg = new Image();
-    currentImg.onload = function(){
-      document.getElementById('preview').innerHTML = '<img src="'+ev.target.result+'">';
-      alert('✅ 照片加载成功');
-    };
-    currentImg.src = ev.target.result;
+document.getElementById('file').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    img=new Image();
+    img.onload=()=>{document.getElementById('preview').innerHTML=`<img src="${ev.target.result}">`;showToast('✅ 图片已加载');};
+    img.src=ev.target.result;
   };
   reader.readAsDataURL(f);
 };
 
-// 保存（唯一出口，每一步都有反馈）
+document.getElementById('placeInput').addEventListener('input',function(){
+  const q=this.value.trim();const sug=document.getElementById('suggestions');
+  clearTimeout(suggestTimer);
+  if(q.length<2){sug.style.display='none';return;}
+  suggestTimer=setTimeout(async()=>{
+    sug.style.display='block';sug.innerHTML='<div>搜索中...</div>';
+    try{
+      const res=await fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(q)+'&limit=5&accept-language=zh',{headers:{'User-Agent':'PanshiWatermark/1.0'}});
+      const data=await res.json();
+      if(!data.length){sug.innerHTML='<div>未找到地点</div>';return;}
+      sug.innerHTML='';
+      data.forEach(item=>{
+        const div=document.createElement('div');
+        div.textContent='📍 '+item.display_name.split(',').slice(0,3).join(',')+' (E'+Number(item.lon).toFixed(5)+', N'+Number(item.lat).toFixed(5)+')';
+        div.onclick=()=>{
+          placeText=item.display_name.split(',').slice(0,3).join(',');
+          placeLon=Number(item.lon);placeLat=Number(item.lat);
+          document.getElementById('placeInput').value=placeText;
+          sug.style.display='none';
+        };
+        sug.appendChild(div);
+      });
+    }catch{ sug.innerHTML='<div>搜索失败</div>'; }
+  },300);
+});
+
+document.addEventListener('click',e=>{if(!e.target.closest('.search-row'))document.getElementById('suggestions').style.display='none';});
+
 function save(){
-  alert('🟢 已进入保存函数');
+  if(isSaving) return;
+  if(!img || !img.complete || !img.naturalWidth){showToast('❌ 请先选择照片');return;}
+  isSaving=true;
+  setProgress(10);
+  const cv=document.getElementById('cv');
+  const MAX_DIM=3000;
+  const scale=Math.min(1, MAX_DIM/Math.max(img.width,img.height));
+  cv.width=img.width*scale; cv.height=img.height*scale;
+  const ctx=cv.getContext('2d');
+  ctx.drawImage(img,0,0,cv.width,cv.height);
+  setProgress(30);
 
-  if(!currentImg){
-    alert('❌ 请先选择照片或点「演示照片」');
-    return;
-  }
+  const project=document.getElementById('project').value||'磐石流量';
+  const note=document.getElementById('note').value||'现场记录';
+  const time=new Date().toLocaleString('zh-CN');
+  const dateStr=new Date().toLocaleDateString('zh-CN');
+  const weekArr=['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+  const week=weekArr[new Date().getDay()];
+  const place=placeText||document.getElementById('placeInput').value||'';
+  const lines=[project, time, dateStr+' '+week, place, note].filter(Boolean);
 
-  var cv = document.getElementById('cv');
-  var MAX = 2000;
-  var scale = Math.min(1, MAX / Math.max(currentImg.width, currentImg.height));
-  cv.width = currentImg.width * scale;
-  cv.height = currentImg.height * scale;
+  const pad=Math.max(24,cv.width*0.02);
+  const lineH=Math.max(32,cv.width*0.022);
+  const fontSize=Math.max(20,cv.width*0.016);
+  ctx.font=`${fontSize}px "PingFang SC",sans-serif`;
 
-  var ctx = cv.getContext('2d');
-  ctx.drawImage(currentImg, 0, 0, cv.width, cv.height);
+  const boxW=Math.max(cv.width*0.36,220);
+  const boxH=lines.length*lineH+pad*2;
+  let x=pad,y=cv.height-pad-boxH;
+  
+  ctx.fillStyle='rgba(0,0,0,0.65)';ctx.fillRect(x,y,boxW,boxH);
+  ctx.fillStyle='#f9e7a0';ctx.fillRect(x,y,6,boxH);
+  ctx.fillStyle='#ffffff';
+  lines.forEach((line,i)=>{ctx.fillText(line,x+pad,y+pad+(i+1)*lineH-lineH*0.3);});
+  setProgress(60);
 
-  // 水印
-  var project = document.getElementById('project').value || '磐石流量';
-  var note = document.getElementById('note').value || '现场记录';
-  var now = new Date();
-  var time = now.toLocaleString('zh-CN');
-
-  ctx.fillStyle = 'rgba(0,0,0,0.6)';
-  ctx.fillRect(20,20,340,140);
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 28px sans-serif';
-  ctx.fillText('磐石水印', 40, 55);
-  ctx.font = '20px sans-serif';
-  ctx.fillText(project, 40, 85);
-  ctx.fillText(time, 40, 110);
-  ctx.fillText(note, 40, 135);
-
-  alert('🟢 水印绘制完成，准备导出');
-
-  // 导出（双兜底）
-  cv.toBlob(function(blob){
-    if(!blob){
-      alert('❌ toBlob 失败，尝试备用方案');
-      fallback();
-      return;
-    }
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = '磐石水印_' + Date.now() + '.jpg';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
-    alert('✅ 下载已触发（如未自动保存，请长按图片存储）');
-  }, 'image/jpeg', 0.9);
+  setTimeout(()=>{
+    try{
+      if(cv.toBlob){
+        cv.toBlob(function(blob){
+          if(!blob){fallback();return;}
+          const url=URL.createObjectURL(blob);
+          const link=document.createElement('a');
+          link.href=url;
+          link.download='磐石水印_'+Date.now()+'.jpg';
+          link.style.display='none';
+          document.body.appendChild(link);
+          const evt=new MouseEvent('click',{bubbles:true,cancelable:true,view:window});
+          link.dispatchEvent(evt);
+          document.body.removeChild(link);
+          setTimeout(()=>{URL.revokeObjectURL(url);setProgress(100);showToast('✅ 保存成功！请查看下载栏');isSaving=false;},5000);
+        },'image/jpeg',0.92);
+      }else{fallback();}
+    }catch(err){fallback();}
+  },50);
 
   function fallback(){
-    var dataURL = cv.toDataURL('image/jpeg', 0.9);
-    var a = document.createElement('a');
-    a.href = dataURL;
-    a.download = '磐石水印_' + Date.now() + '.jpg';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    alert('✅ 备用方案已执行');
+    try{
+      const dataURL=cv.toDataURL('image/jpeg',0.92);
+      const link=document.createElement('a');
+      link.download='磐石水印_'+Date.now()+'.jpg';
+      link.href=dataURL;
+      document.body.appendChild(link);link.click();document.body.removeChild(link);
+      setProgress(100);showToast('✅ 保存成功（备用通道）');isSaving=false;
+    }catch(e2){setProgress(0);showToast('❌ 保存失败');isSaving=false;}
   }
 }
 </script>
