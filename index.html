@@ -5,21 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>磐石水印相机</title>
 
-<!-- 高德地图 JS API（关键） -->
+<!-- 高德地图 JS API -->
 <script src="https://webapi.amap.com/maps?v=2.0&key=YOUR_AMAP_KEY"></script>
-
 <script src="https://cdn.tailwindcss.com"></script>
+
 <style>
 body{background:#1a1a2e;color:#eee;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei";margin:0;padding:16px}
 .wrap{position:relative;background:#111;border-radius:8px;overflow:hidden}
 canvas{display:block;max-width:100%}
 .wm{position:absolute;color:rgba(255,255,255,.95);font-size:14px;line-height:1.6;text-shadow:0 1px 3px rgba(0,0,0,.8);cursor:move;white-space:pre;padding:4px;user-select:none}
-input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radius:6px;padding:6px 8px;font-size:13px}
+input{background:#1f2937;border:1px solid #374151;color:#eee;border-radius:6px;padding:6px 8px;font-size:13px}
 .btn{background:#2563eb;color:#fff;border:none;border-radius:6px;padding:8px 12px;cursor:pointer;font-size:13px}
 .btn:hover{background:#1d4ed8}
 .btn-green{background:#16a34a}.btn-green:hover{background:#15803d}
 .btn-red{background:#dc2626}.btn-red:hover{background:#b91c1c}
-.sug{background:#1f2937;border:1px solid #374151;border-radius:6px;max-height:180px;overflow-y:auto;position:absolute;z-index:10;width:calc(100% - 16px)}
+.sug{background:#1f2937;border:1px solid #374151;border-radius:6px;max-height:220px;overflow-y:auto;position:absolute;top:calc(100% + 4px);left:0;width:100%;z-index:10}
 .sug div{padding:8px;cursor:pointer;font-size:13px}.sug div:hover{background:#374151}
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
 </style>
@@ -31,13 +31,8 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
 <div class="w-[320px] bg-gray-800 p-4 rounded-lg overflow-auto">
 <h2 class="text-lg font-bold mb-4">磐石水印相机</h2>
 
-<div class="mb-3">
-<label class="text-sm">1. 上传图片</label>
-<input type="file" id="file" accept="image/*" class="w-full mt-1">
-</div>
-
 <div class="mb-3 relative">
-<label class="text-sm">2. 地点（输入自动联想）</label>
+<label class="text-sm">1. 地点（输入自动联想）</label>
 <input id="loc" placeholder="如：大红门 / 达府 / 外滩" class="w-full mt-1">
 <div id="sug" class="sug hidden"></div>
 </div>
@@ -56,7 +51,7 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
 <button onclick="getWeather()" class="btn btn-green w-full mb-3">🌐 自动获取天气</button>
 
 <div class="mb-3">
-<label class="text-sm">3. 快捷位置</label>
+<label class="text-sm">2. 快捷位置</label>
 <div class="grid3">
 <button onclick="setP('tl')" class="btn">左上</button>
 <button onclick="setP('tm')" class="btn">中上</button>
@@ -68,27 +63,32 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
 </div>
 
 <div class="mb-3">
-<label class="text-sm">4. 字号 / 透明度</label>
+<label class="text-sm">3. 字号 / 透明度</label>
 <input id="fs" type="range" min="12" max="28" value="14" class="w-full mt-1">
 <input id="op" type="range" min="50" max="100" value="95" class="w-full mt-1">
 </div>
 
 <button onclick="exportImg()" class="btn btn-red w-full">📥 导出图片</button>
-<p class="text-xs text-gray-500 mt-3">* 支持全国地点联想（如：大红门）<br>* 断网自动估算天气</p>
+<p class="text-xs text-gray-500 mt-3">* 支持全国地点联想<br>* 回车可快速选中</p>
 </div>
 
 <!-- 右侧画布 -->
 <div class="flex-1 wrap" id="wrap">
 <canvas id="cv"></canvas>
+<input type="file" id="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" title="点击上传图片">
 <div id="wm" class="wm"></div>
 </div>
 </div>
 
 <script>
-/* ========= 高德地图全国全量 POI 联想 ========= */
-let placeSearch = null;
+/* ========= 高德地图（只搜中国 + 防抖） ========= */
+let placeSearch = null, timer = null, cur = -1;
 AMap.plugin("AMap.PlaceSearch", () => {
-  placeSearch = new AMap.PlaceSearch({ pageSize: 8, extensions: "base" });
+  placeSearch = new AMap.PlaceSearch({
+    pageSize: 8,
+    extensions: "base",
+    citylimit: true   // ✅ 只搜中国
+  });
 });
 
 const locI = document.getElementById("loc");
@@ -97,64 +97,78 @@ const latI = document.getElementById("lat");
 const lonI = document.getElementById("lon");
 
 locI.oninput = () => {
-  const k = locI.value.trim();
-  sug.innerHTML = "";
-  if (!k || !placeSearch) { sug.classList.add("hidden"); return; }
-
-  placeSearch.search(k, (status, res) => {
-    if (status !== "complete" || !res.poiList) {
-      sug.classList.add("hidden"); return;
-    }
-    sug.classList.remove("hidden");
-    res.poiList.pois.forEach(p => {
-      const div = document.createElement("div");
-      const addr = [p.pname, p.cityname, p.adname].filter(Boolean).join("");
-      div.textContent = `${p.name}${addr ? " - " + addr : ""}`;
-      div.onclick = () => {
-        locI.value = p.name;
-        latI.value = p.location.getLat().toFixed(4);
-        lonI.value = p.location.getLng().toFixed(4);
-        sug.classList.add("hidden");
-        update();
-      };
-      sug.appendChild(div);
+  clearTimeout(timer);
+  timer = setTimeout(() => {
+    const k = locI.value.trim();
+    sug.innerHTML = "";
+    if (!k || !placeSearch) { sug.classList.add("hidden"); return; }
+    placeSearch.search(k, (status, res) => {
+      if (status !== "complete" || !res.poiList) { sug.classList.add("hidden"); return; }
+      sug.classList.remove("hidden");
+      // ✅ 按省市区排序
+      res.poiList.pois.sort((a,b)=>{
+        const sa=[a.pname,a.cityname,a.adname].filter(Boolean).length;
+        const sb=[b.pname,b.cityname,b.adname].filter(Boolean).length;
+        return sb-sa;
+      }).forEach(p=>{
+        const div=document.createElement("div");
+        const addr=[p.pname,p.cityname,p.adname].filter(Boolean).join("");
+        div.textContent=`${p.name}${addr?" - "+addr:""}`;
+        div.onclick=()=>{
+          locI.value=p.name;
+          latI.value=p.location.getLat().toFixed(4);
+          lonI.value=p.location.getLng().toFixed(4);
+          sug.classList.add("hidden");update();cur=-1;
+        };
+        sug.appendChild(div);
+      });
     });
-  });
+  }, 300); // ✅ 防抖
 };
 
-document.addEventListener("click", e => {
-  if (e.target !== locI) sug.classList.add("hidden");
-});
+/* ========= 键盘操作 ========= */
+locI.onkeydown=e=>{
+  const items=sug.querySelectorAll("div");
+  if(!items.length)return;
+  if(e.key==="ArrowDown"){
+    cur=(cur+1)%items.length;
+    items.forEach(i=>i.style.background="");
+    items[cur].style.background="#374151";
+    e.preventDefault();
+  }
+  if(e.key==="ArrowUp"){
+    cur=(cur-1+items.length)%items.length;
+    items.forEach(i=>i.style.background="");
+    items[cur].style.background="#374151";
+    e.preventDefault();
+  }
+  if(e.key==="Enter"){
+    if(cur>=0)items[cur].click();
+    else if(items.length>0)items[0].click();
+    cur=-1;e.preventDefault();
+  }
+};
 
-/* ========= 天气获取（联网+离线降级） ========= */
-async function getWeather() {
-  const lat = latI.value, lon = lonI.value;
-  if (!lat || !lon) { alert("请先选择地点"); return; }
-  try {
-    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,weather_code`);
-    const d = await r.json();
-    tmpI.value = `${Math.round(d.current.temperature_2m)}℃`;
-    windI.value = `风速${d.current.wind_speed_10m.toFixed(1)}m/s`;
-    weaI.value = code2wea(d.current.weather_code);
-  } catch {
-    const t = 30 - Math.abs(parseFloat(lat)) * 0.5 + Math.random() * 6 - 3;
-    tmpI.value = `${Math.round(t)}℃`;
-    weaI.value = ["晴","多云","阴"][Math.floor(Math.random()*3)];
-    windI.value = "微风";
+document.addEventListener("click",e=>{if(e.target!==locI)sug.classList.add("hidden")});
+
+/* ========= 天气 ========= */
+async function getWeather(){
+  if(!latI.value||!lonI.value){alert("请先选择地点");return;}
+  try{
+    const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latI.value}&longitude=${lonI.value}&current=temperature_2m,wind_speed_10m,weather_code`);
+    const d=await r.json();
+    tmpI.value=`${Math.round(d.current.temperature_2m)}℃`;
+    windI.value=`风速${d.current.wind_speed_10m.toFixed(1)}m/s`;
+    weaI.value=["晴","多云","阴","雨","雪"][d.current.weather_code%5];
+  }catch{
+    tmpI.value=`${Math.round(30-Math.abs(latI.value)*0.5)}℃`;
+    weaI.value=["晴","多云","阴"][Math.random()*3|0];
+    windI.value="微风";
   }
   update();
 }
 
-function code2wea(code) {
-  if (code === 0) return "晴";
-  if (code <= 3) return "多云";
-  if (code <= 48) return "雾";
-  if (code <= 67) return "雨";
-  if (code <= 86) return "雪";
-  return "晴";
-}
-
-/* ========= 原有逻辑（图片/水印/拖拽/导出）完全不变 ========= */
+/* ========= 原有逻辑（完全保留） ========= */
 const cv=document.getElementById("cv"),ctx=cv.getContext("2d");
 const wm=document.getElementById("wm"),wrap=document.getElementById("wrap");
 let img=null,drag=false,dx=0,dy=0,ix=0,iy=0;
@@ -168,8 +182,7 @@ document.getElementById("file").onchange=e=>{
 function draw(){if(img)ctx.drawImage(img,0,0);}
 
 function txt(){
-  const d=new Date();
-  const p=s=>String(s).padStart(2,"0");
+  const d=new Date(),p=s=>String(s).padStart(2,"0");
   const tm=`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
   const lc=`${locI.value} ${latI.value}°N ${lonI.value}°E`;
   const wt=`${weaI.value} ${tmpI.value} ${windI.value}`;
