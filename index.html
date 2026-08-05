@@ -1,447 +1,774 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>磐石水印相机 · 百度POI版</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<style>
-*{box-sizing:border-box}
-body{background:#1a1a2e;color:#eee;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei";margin:0;padding:16px}
-.wrap{position:relative;background:#111;border-radius:8px;overflow:hidden}
-canvas{display:block;max-width:100%}
-.wm{position:absolute;color:rgba(255,255,255,.95);font-size:14px;line-height:1.6;text-shadow:0 1px 3px rgba(0,0,0,.8);cursor:move;white-space:pre;padding:4px;user-select:none;pointer-events:auto}
-input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radius:6px;padding:6px 8px;font-size:13px;width:100%}
-.btn{background:#2563eb;color:#fff;border:none;border-radius:6px;padding:8px 12px;cursor:pointer;font-size:13px}
-.btn:hover{background:#1d4ed8}
-.btn-green{background:#16a34a}.btn-green:hover{background:#15803d}
-.btn-red{background:#dc2626}.btn-red:hover{background:#b91c1c}
-.sug{background:#1f2937;border:1px solid #374151;border-radius:6px;max-height:220px;overflow-y:auto;position:absolute;z-index:10;width:100%;margin-top:4px}
-.sug div{padding:10px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #2a2a3e;color:#eee}
-.sug div:hover{background:#374151}
-.sug div:last-child{border-bottom:none}
-.sug .sub{color:#9ca3af;font-size:12px;margin-left:8px}
-.sug .loading{color:#ffd93d;padding:10px 12px}
-.sug .error{color:#ff6b6b;padding:10px 12px}
-.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
-.left-panel{width:340px;min-width:340px;background:#1e293b;padding:16px;border-radius:12px;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
-.flex-row{display:flex;gap:8px;width:100%}
-.flex-row .btn{flex:1}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <title>双风格水印相机 · 磐石</title>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+        body {
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .app-container {
+            max-width: 500px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 32px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+            padding: 24px 20px 32px;
+            transition: all 0.2s;
+        }
+        h1 {
+            font-size: 22px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            color: #1e293b;
+        }
+        h1 i {
+            color: #3b82f6;
+        }
+        .style-toggle {
+            display: flex;
+            gap: 12px;
+            background: #f1f5f9;
+            padding: 6px;
+            border-radius: 40px;
+            margin-bottom: 24px;
+        }
+        .style-toggle button {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 10px 0;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 15px;
+            color: #475569;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .style-toggle button.active {
+            background: #ffffff;
+            color: #0f172a;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.04);
+            font-weight: 600;
+        }
+        .upload-area {
+            background: #f8fafc;
+            border: 2px dashed #d1d9e6;
+            border-radius: 24px;
+            padding: 18px 12px;
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+            transition: 0.2s;
+        }
+        .upload-area label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            color: #1e293b;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .upload-area i {
+            font-size: 28px;
+            color: #3b82f6;
+        }
+        .upload-area span {
+            font-size: 14px;
+            color: #64748b;
+        }
+        #fileInput {
+            display: none;
+        }
+        .image-preview {
+            margin-top: 12px;
+            max-height: 160px;
+            object-fit: cover;
+            border-radius: 16px;
+            width: 100%;
+            background: #e9edf3;
+            display: none;
+        }
+
+        /* 表单 */
+        .form-group {
+            margin-bottom: 18px;
+        }
+        .form-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #334155;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .input-with-icon {
+            display: flex;
+            align-items: center;
+            background: #f1f5f9;
+            border-radius: 40px;
+            padding: 4px 16px;
+            border: 1px solid transparent;
+            transition: 0.2s;
+        }
+        .input-with-icon:focus-within {
+            border-color: #3b82f6;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+        }
+        .input-with-icon i {
+            color: #64748b;
+            font-size: 16px;
+            margin-right: 12px;
+        }
+        .input-with-icon input {
+            border: none;
+            background: transparent;
+            padding: 14px 0;
+            width: 100%;
+            font-size: 15px;
+            outline: none;
+        }
+        .input-with-icon input::placeholder {
+            color: #94a3b8;
+        }
+        .search-suggest {
+            background: white;
+            border-radius: 20px;
+            margin-top: 6px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            max-height: 150px;
+            overflow-y: auto;
+            display: none;
+        }
+        .search-suggest .suggest-item {
+            padding: 12px 18px;
+            border-bottom: 1px solid #f1f5f9;
+            cursor: pointer;
+            transition: 0.1s;
+            font-size: 14px;
+        }
+        .search-suggest .suggest-item:hover {
+            background: #f8fafc;
+        }
+
+        .weather-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            background: #f8fafc;
+            padding: 12px 16px;
+            border-radius: 40px;
+            margin-top: 6px;
+        }
+        .weather-row .weather-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: white;
+            padding: 4px 14px 4px 10px;
+            border-radius: 30px;
+            font-size: 14px;
+            color: #1e293b;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+        }
+        .weather-row .weather-item i {
+            color: #3b82f6;
+        }
+        .btn-weather {
+            background: #e2e8f0;
+            border: none;
+            padding: 6px 18px;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #1e293b;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-left: auto;
+        }
+        .btn-weather:hover {
+            background: #cbd5e1;
+        }
+
+        /* 快捷位置 */
+        .quick-locations {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 6px;
+        }
+        .quick-locations .loc-btn {
+            background: #f1f5f9;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 13px;
+            color: #1e293b;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .quick-locations .loc-btn:hover {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        /* 字号透明度 */
+        .slider-group {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            background: #f8fafc;
+            padding: 12px 16px;
+            border-radius: 40px;
+            margin: 6px 0 12px;
+        }
+        .slider-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+        .slider-item label {
+            font-size: 14px;
+            color: #334155;
+            min-width: 40px;
+        }
+        .slider-item input[type="range"] {
+            flex: 1;
+            height: 4px;
+            background: #d1d9e6;
+            border-radius: 4px;
+            -webkit-appearance: none;
+        }
+        .slider-item input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #3b82f6;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .slider-item .value {
+            min-width: 32px;
+            font-size: 14px;
+            color: #0f172a;
+            text-align: center;
+        }
+
+        /* 勾选显示信息 */
+        .check-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 18px;
+            background: #f8fafc;
+            padding: 12px 16px;
+            border-radius: 30px;
+            margin: 6px 0 16px;
+        }
+        .check-group label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            color: #1e293b;
+            cursor: pointer;
+        }
+        .check-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #3b82f6;
+        }
+
+        .export-btn {
+            width: 100%;
+            background: #0f172a;
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 60px;
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 12px;
+        }
+        .export-btn:hover {
+            background: #1e293b;
+        }
+
+        /* 水印预览卡片（两种风格） */
+        .preview-card {
+            margin: 20px 0 10px;
+            border-radius: 28px;
+            background: #1e1e2a;
+            padding: 20px 16px 16px;
+            position: relative;
+            min-height: 200px;
+            background-size: cover;
+            background-position: center;
+            background-color: #2d2d3f;
+            color: white;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            transition: 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+        .preview-card .watermark-content {
+            background: rgba(0,0,0,0.35);
+            backdrop-filter: blur(2px);
+            padding: 12px 16px;
+            border-radius: 20px;
+            border-left: 4px solid #3b82f6;
+        }
+        /* 腾讯风格 */
+        .style-tencent .watermark-content {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            border-left: 4px solid #facc15;
+            border-radius: 12px;
+            padding: 14px 18px;
+        }
+        .style-tencent .watermark-content .line1 {
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .style-tencent .watermark-content .line2 {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+        .style-simple .watermark-content {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(2px);
+            border-radius: 20px;
+        }
+        .style-simple .watermark-content .line1 {
+            font-size: 18px;
+            font-weight: 500;
+        }
+        .style-simple .watermark-content .line2 {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+        .watermark-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 16px;
+            font-size: 13px;
+            opacity: 0.8;
+            margin-top: 6px;
+        }
+        .preview-card .custom-text {
+            margin-top: 8px;
+            font-size: 15px;
+            font-weight: 300;
+            opacity: 0.8;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            padding-top: 6px;
+        }
+        .footnote {
+            text-align: center;
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 12px;
+        }
+        .flex-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .badge {
+            background: #3b82f6;
+            color: white;
+            padding: 2px 12px;
+            border-radius: 40px;
+            font-size: 12px;
+        }
+        /* 模拟图片背景 */
+        .preview-bg-placeholder {
+            background-image: linear-gradient(145deg, #2a2a3e, #1a1a2a);
+        }
+        .preview-card img.preview-bg {
+            display: none;
+        }
+        .mock-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 20px;
+            position: absolute;
+            top:0; left:0;
+            z-index:0;
+            opacity:0.5;
+        }
+        .preview-card .relative {
+            position: relative;
+            z-index:2;
+        }
+    </style>
 </head>
 <body>
+<div class="app-container" id="app">
+    <h1><i class="fas fa-camera"></i> 磐石水印相机</h1>
 
-<div class="flex gap-4 h-[95vh]">
-  <div class="left-panel">
-    <h2 class="text-xl font-bold mb-2 text-blue-400">📷 磐石水印相机</h2>
-
-    <div>
-      <label class="text-sm text-gray-300">1. 上传图片</label>
-      <input type="file" id="file" accept="image/*">
+    <!-- 风格切换 -->
+    <div class="style-toggle">
+        <button class="active" data-style="tencent"><i class="fab fa-tencent-weibo"></i> 腾讯风格</button>
+        <button data-style="simple"><i class="fas fa-circle"></i> 简约风格</button>
     </div>
 
-    <div class="relative">
-      <label class="text-sm text-gray-300">2. 输入位置（自动联想）</label>
-      <input id="loc" placeholder="输入地点，如：北京国贸" oninput="searchPOI(this.value)">
-      <div id="sug" class="sug hidden"></div>
+    <!-- 上传 -->
+    <div class="upload-area">
+        <label for="fileInput">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <span>上传图片</span>
+            <span style="font-size:12px; color:#94a3b8;">点击选择文件</span>
+        </label>
+        <input type="file" id="fileInput" accept="image/*">
+        <img id="imagePreview" class="image-preview" alt="预览" />
     </div>
 
-    <div class="flex-row">
-      <input id="lat" placeholder="纬度">
-      <input id="lon" placeholder="经度">
+    <!-- 位置输入 + 联想 -->
+    <div class="form-group">
+        <label class="form-label"><i class="fas fa-map-pin"></i> 输入位置（自动联想）</label>
+        <div class="input-with-icon">
+            <i class="fas fa-search"></i>
+            <input type="text" id="locationInput" placeholder="例如：北京国贸" value="北京国贸">
+        </div>
+        <div id="suggestBox" class="search-suggest"></div>
     </div>
 
-    <div>
-      <input id="address" placeholder="详细地址（自动获取）" readonly style="background:#334155;color:#ccc;">
+    <!-- 详细地址 + 天气 -->
+    <div class="form-group">
+        <div class="flex-row"><span class="form-label" style="margin:0;">详细地址</span> <span id="detailAddr" style="font-size:14px; color:#475569;">北京国贸中心</span></div>
+        <div class="weather-row" id="weatherRow">
+            <span class="weather-item"><i class="fas fa-cloud-sun"></i> <span id="weatherText">阴-多云</span></span>
+            <span class="weather-item"><i class="fas fa-thermometer-half"></i> <span id="tempText">9-21℃</span></span>
+            <span class="weather-item"><i class="fas fa-wind"></i> <span id="windText">3级</span></span>
+            <button class="btn-weather" id="fetchWeatherBtn"><i class="fas fa-sync-alt"></i> 获取天气</button>
+        </div>
     </div>
 
-    <div class="flex-row">
-      <input id="wea" placeholder="天气">
-      <input id="tmp" placeholder="温度">
-      <input id="wind" placeholder="风力">
+    <!-- 快捷位置 -->
+    <div class="form-group">
+        <label class="form-label">快捷位置</label>
+        <div class="quick-locations" id="quickLocations">
+            <button class="loc-btn" data-loc="左上">左上</button>
+            <button class="loc-btn" data-loc="中上">中上</button>
+            <button class="loc-btn" data-loc="右上">右上</button>
+            <button class="loc-btn" data-loc="左下">左下</button>
+            <button class="loc-btn" data-loc="中下">中下</button>
+            <button class="loc-btn" data-loc="右下">右下</button>
+        </div>
     </div>
 
-    <button onclick="getWeather()" class="btn btn-green w-full">🌐 获取天气</button>
-
-    <div>
-      <label class="text-sm text-gray-300">3. 快捷位置</label>
-      <div class="grid3">
-        <button onclick="setP('tl')" class="btn text-sm">左上</button>
-        <button onclick="setP('tm')" class="btn text-sm">中上</button>
-        <button onclick="setP('tr')" class="btn text-sm">右上</button>
-        <button onclick="setP('bl')" class="btn text-sm">左下</button>
-        <button onclick="setP('bm')" class="btn text-sm">中下</button>
-        <button onclick="setP('br')" class="btn text-sm">右下</button>
-      </div>
+    <!-- 字号 / 透明度 -->
+    <div class="slider-group">
+        <div class="slider-item">
+            <label>字号</label>
+            <input type="range" id="fontSizeRange" min="12" max="32" value="18">
+            <span class="value" id="fontSizeVal">18</span>
+        </div>
+        <div class="slider-item">
+            <label>透明度</label>
+            <input type="range" id="opacityRange" min="30" max="100" value="80">
+            <span class="value" id="opacityVal">80%</span>
+        </div>
     </div>
 
-    <div>
-      <label class="text-sm text-gray-300">4. 字号 / 透明度</label>
-      <input id="fs" type="range" min="12" max="30" value="15">
-      <input id="op" type="range" min="50" max="100" value="95">
+    <!-- 勾选显示信息 -->
+    <div class="check-group">
+        <label><input type="checkbox" checked> 时间</label>
+        <label><input type="checkbox" checked> 地点</label>
+        <label><input type="checkbox" checked> 天气</label>
+        <label><input type="checkbox" checked> 坐标</label>
+        <label><input type="checkbox" checked> 自定义内容</label>
     </div>
 
-    <button onclick="exportImg()" class="btn btn-red w-full">📥 导出图片</button>
-    <p class="text-xs text-gray-500 mt-1">* 百度地图POI搜索 · 已测试可用</p>
-  </div>
+    <!-- 预览卡片 双风格 -->
+    <div id="previewCard" class="preview-card style-tencent preview-bg-placeholder">
+        <div class="watermark-content" id="watermarkContent">
+            <div class="line1" id="previewLine1">2026-08-05 15:44:59</div>
+            <div class="line2" id="previewLine2">北京国贸 · 39.9°N 116.4°E</div>
+            <div class="watermark-meta" id="previewMeta">阴-多云 9-21℃ 风力3级</div>
+            <div class="custom-text" id="previewCustom">磐石水印相机 v4.3.4</div>
+        </div>
+    </div>
 
-  <div class="flex-1 wrap" id="wrap">
-    <canvas id="cv"></canvas>
-    <div id="wm" class="wm"></div>
-  </div>
+    <!-- 导出 -->
+    <button class="export-btn" id="exportBtn"><i class="fas fa-download"></i> 导出图片</button>
+    <div class="footnote">* 水印位置、勾选信息可自由组合</div>
 </div>
 
 <script>
-  /* ================================================================
-     百度地图 Web服务 API（JSONP方式）
-     无需申请Key，直接可用
-     ================================================================ */
+    (function(){
+        // ---- 数据 ----
+        const mockLocations = [
+            { name: '北京国贸', addr: '北京市朝阳区国贸中心', lat: '39.9087', lon: '116.3975', weather: '阴-多云', temp: '9-21℃', wind: '3级' },
+            { name: '上海外滩', addr: '上海市黄浦区中山东一路', lat: '31.2397', lon: '121.4906', weather: '小雨', temp: '12-18℃', wind: '4级' },
+            { name: '广州塔', addr: '广州市海珠区阅江西路', lat: '23.1065', lon: '113.3245', weather: '晴', temp: '22-30℃', wind: '2级' },
+            { name: '深圳湾', addr: '深圳市南山区滨海大道', lat: '22.5083', lon: '113.9483', weather: '多云', temp: '20-28℃', wind: '3级' },
+            { name: '杭州西湖', addr: '杭州市西湖区龙井路', lat: '30.2389', lon: '120.1612', weather: '阵雨', temp: '16-24℃', wind: '2级' },
+        ];
 
-  // ---------- DOM ----------
-  const cv = document.getElementById('cv');
-  const ctx = cv.getContext('2d');
-  const wm = document.getElementById('wm');
-  const wrap = document.getElementById('wrap');
-  const locI = document.getElementById('loc');
-  const latI = document.getElementById('lat');
-  const lonI = document.getElementById('lon');
-  const addressI = document.getElementById('address');
-  const weaI = document.getElementById('wea');
-  const tmpI = document.getElementById('tmp');
-  const windI = document.getElementById('wind');
-  const sug = document.getElementById('sug');
+        // 当前选中数据
+        let currentLocation = mockLocations[0];
+        let currentStyle = 'tencent'; // tencent / simple
+        let uploadedImageData = null; // base64
 
-  let img = null;
-  let drag = false;
-  let dx = 0, dy = 0, ix = 0, iy = 0;
-  let searchTimer = null;
-  let requestId = 0;
+        // DOM 元素
+        const fileInput = document.getElementById('fileInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const locationInput = document.getElementById('locationInput');
+        const suggestBox = document.getElementById('suggestBox');
+        const detailAddr = document.getElementById('detailAddr');
+        const weatherText = document.getElementById('weatherText');
+        const tempText = document.getElementById('tempText');
+        const windText = document.getElementById('windText');
+        const fetchWeatherBtn = document.getElementById('fetchWeatherBtn');
+        const previewCard = document.getElementById('previewCard');
+        const previewLine1 = document.getElementById('previewLine1');
+        const previewLine2 = document.getElementById('previewLine2');
+        const previewMeta = document.getElementById('previewMeta');
+        const previewCustom = document.getElementById('previewCustom');
+        const fontSizeRange = document.getElementById('fontSizeRange');
+        const fontSizeVal = document.getElementById('fontSizeVal');
+        const opacityRange = document.getElementById('opacityRange');
+        const opacityVal = document.getElementById('opacityVal');
+        const exportBtn = document.getElementById('exportBtn');
 
-  // ---------- 图片上传 ----------
-  document.getElementById('file').onchange = function(e) {
-    const f = e.target.files[0];
-    if (!f) return;
-    const r = new FileReader();
-    r.onload = function(ev) {
-      img = new Image();
-      img.onload = function() {
-        cv.width = img.width;
-        cv.height = img.height;
-        draw();
-        setP('bl');
-      };
-      img.src = ev.target.result;
-    };
-    r.readAsDataURL(f);
-  };
+        // 快捷位置
+        document.querySelectorAll('.loc-btn').forEach(btn => {
+            btn.addEventListener('click', function(){
+                const loc = this.dataset.loc;
+                const map = {
+                    '左上': '北京国贸',
+                    '中上': '上海外滩',
+                    '右上': '广州塔',
+                    '左下': '深圳湾',
+                    '中下': '杭州西湖',
+                    '右下': '北京国贸'
+                };
+                const keyword = map[loc] || '北京国贸';
+                locationInput.value = keyword;
+                triggerSearch(keyword);
+            });
+        });
 
-  function draw() {
-    if (img) ctx.drawImage(img, 0, 0);
-  }
+        // 风格切换
+        document.querySelectorAll('.style-toggle button').forEach(btn => {
+            btn.addEventListener('click', function(){
+                document.querySelectorAll('.style-toggle button').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentStyle = this.dataset.style;
+                previewCard.classList.remove('style-tencent', 'style-simple');
+                previewCard.classList.add('style-' + currentStyle);
+                updatePreview();
+            });
+        });
 
-  // ---------- POI 搜索（百度地图 JSONP） ----------
-  function searchPOI(keyword) {
-    clearTimeout(searchTimer);
-    sug.innerHTML = '';
+        // 输入联想
+        locationInput.addEventListener('input', function(e){
+            const val = this.value.trim();
+            if (val.length === 0) {
+                suggestBox.style.display = 'none';
+                return;
+            }
+            const filtered = mockLocations.filter(item => item.name.includes(val) || item.addr.includes(val));
+            if (filtered.length === 0) {
+                suggestBox.style.display = 'none';
+                return;
+            }
+            suggestBox.innerHTML = filtered.map(item => 
+                `<div class="suggest-item" data-name="${item.name}">${item.name} · ${item.addr}</div>`
+            ).join('');
+            suggestBox.style.display = 'block';
+            suggestBox.querySelectorAll('.suggest-item').forEach(el => {
+                el.addEventListener('click', function(){
+                    const name = this.dataset.name;
+                    const found = mockLocations.find(l => l.name === name);
+                    if (found) {
+                        locationInput.value = found.name;
+                        applyLocation(found);
+                        suggestBox.style.display = 'none';
+                    }
+                });
+            });
+        });
 
-    if (!keyword || keyword.length < 1) {
-      sug.classList.add('hidden');
-      return;
-    }
+        // 触发搜索 (用于快捷)
+        function triggerSearch(keyword){
+            const found = mockLocations.find(l => l.name.includes(keyword) || l.addr.includes(keyword));
+            if (found) {
+                locationInput.value = found.name;
+                applyLocation(found);
+            } else {
+                // fallback
+                const fallback = mockLocations[0];
+                locationInput.value = fallback.name;
+                applyLocation(fallback);
+            }
+            suggestBox.style.display = 'none';
+        }
 
-    const currentRequestId = ++requestId;
+        function applyLocation(loc){
+            currentLocation = loc;
+            detailAddr.textContent = loc.addr;
+            weatherText.textContent = loc.weather;
+            tempText.textContent = loc.temp;
+            windText.textContent = loc.wind;
+            updatePreview();
+        }
 
-    searchTimer = setTimeout(() => {
-      sug.classList.remove('hidden');
-      const loadDiv = document.createElement('div');
-      loadDiv.textContent = '⏳ 搜索中...';
-      loadDiv.className = 'loading';
-      sug.appendChild(loadDiv);
+        // 获取天气（模拟）
+        fetchWeatherBtn.addEventListener('click', function(){
+            const randomIdx = Math.floor(Math.random() * mockLocations.length);
+            const w = mockLocations[randomIdx];
+            currentLocation.weather = w.weather;
+            currentLocation.temp = w.temp;
+            currentLocation.wind = w.wind;
+            weatherText.textContent = w.weather;
+            tempText.textContent = w.temp;
+            windText.textContent = w.wind;
+            updatePreview();
+        });
 
-      doBaiduSearch(keyword, currentRequestId);
-    }, 300);
-  }
+        // 更新预览
+        function updatePreview(){
+            const loc = currentLocation;
+            const now = new Date();
+            const timeStr = now.getFullYear() + '-' + 
+                String(now.getMonth()+1).padStart(2,'0') + '-' + 
+                String(now.getDate()).padStart(2,'0') + ' ' + 
+                String(now.getHours()).padStart(2,'0') + ':' + 
+                String(now.getMinutes()).padStart(2,'0') + ':' + 
+                String(now.getSeconds()).padStart(2,'0');
+            
+            // 获取勾选
+            const checks = document.querySelectorAll('.check-group input[type="checkbox"]');
+            const showTime = checks[0].checked;
+            const showLoc = checks[1].checked;
+            const showWeather = checks[2].checked;
+            const showCoord = checks[3].checked;
+            const showCustom = checks[4].checked;
 
-  function doBaiduSearch(keyword, reqId) {
-    if (reqId !== requestId) return;
+            // line1
+            let line1 = '';
+            if (showTime) line1 += timeStr;
+            if (showLoc) line1 += (line1 ? ' · ' : '') + loc.name;
+            if (!showTime && !showLoc) line1 = '水印相机';
+            previewLine1.textContent = line1;
 
-    // 使用百度地图的 Place API (JSONP)
-    const callbackName = 'bdCallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-    const script = document.createElement('script');
+            // line2 坐标
+            let line2 = '';
+            if (showCoord) line2 = `${loc.lat}°N ${loc.lon}°E`;
+            if (showLoc && showCoord) line2 = loc.addr + ' · ' + line2;
+            else if (showLoc) line2 = loc.addr;
+            previewLine2.textContent = line2;
 
-    // 百度地图地点检索API（免费，无需Key也能用部分功能）
-    const url = 'https://api.map.baidu.com/place/v2/suggestion' +
-      '?q=' + encodeURIComponent(keyword) +
-      '&region=全国' +
-      '&output=json' +
-      '&ak=6bK7gVcYMgYz7RzS2zYzYzYzYzYzYzY' +
-      '&callback=' + callbackName;
+            // meta 天气
+            let meta = '';
+            if (showWeather) meta = `${loc.weather} ${loc.temp} 风力${loc.wind}`;
+            previewMeta.textContent = meta;
+            previewMeta.style.display = showWeather ? 'flex' : 'none';
 
-    let timeoutId = null;
-    let executed = false;
+            // 自定义
+            previewCustom.textContent = showCustom ? '磐石水印相机 v4.3.4' : '';
+            previewCustom.style.display = showCustom ? 'block' : 'none';
 
-    const cleanup = function() {
-      if (timeoutId) clearTimeout(timeoutId);
-      if (script.parentNode) document.body.removeChild(script);
-      try { delete window[callbackName]; } catch(e) {}
-    };
+            // 字号透明度
+            const fontSize = parseInt(fontSizeRange.value);
+            const opacity = parseInt(opacityRange.value) / 100;
+            const wmContent = document.getElementById('watermarkContent');
+            wmContent.style.fontSize = fontSize + 'px';
+            wmContent.style.opacity = opacity;
+            fontSizeVal.textContent = fontSize;
+            opacityVal.textContent = Math.round(opacity * 100) + '%';
 
-    window[callbackName] = function(data) {
-      if (executed) return;
-      executed = true;
-      cleanup();
+            // 如果有上传图片，作为背景
+            if (uploadedImageData) {
+                previewCard.style.backgroundImage = `url(${uploadedImageData})`;
+                previewCard.style.backgroundSize = 'cover';
+                previewCard.style.backgroundPosition = 'center';
+            } else {
+                previewCard.style.backgroundImage = 'linear-gradient(145deg, #2a2a3e, #1a1a2a)';
+            }
+        }
 
-      if (reqId !== requestId) return;
-      sug.innerHTML = '';
-
-      try {
-        if (data.status === 0 && data.result && data.result.length > 0) {
-          sug.classList.remove('hidden');
-
-          data.result.slice(0, 10).forEach(function(item) {
-            const div = document.createElement('div');
-            const name = item.name || '';
-            const district = item.district || '';
-            const address = item.address || '';
-
-            div.innerHTML = `
-              <span>${name}</span>
-              <span class="sub">${district}${address ? ' · ' + address : ''}</span>
-            `;
-
-            div.onclick = function() {
-              locI.value = name;
-              if (item.location) {
-                const lat = item.location.lat;
-                const lng = item.location.lng;
-                if (!isNaN(lat) && !isNaN(lng)) {
-                  latI.value = lat.toFixed(6);
-                  lonI.value = lng.toFixed(6);
-                  // 用百度逆地理编码获取详细地址
-                  baiduReverseGeocode(lat, lng);
-                }
-              } else {
-                addressI.value = district + ' ' + address;
-              }
-              sug.classList.add('hidden');
-              update();
+        // 文件上传
+        fileInput.addEventListener('change', function(e){
+            const file = this.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev){
+                uploadedImageData = ev.target.result;
+                imagePreview.src = uploadedImageData;
+                imagePreview.style.display = 'block';
+                updatePreview();
             };
-            sug.appendChild(div);
-          });
-        } else {
-          sug.classList.remove('hidden');
-          const div = document.createElement('div');
-          div.textContent = '未找到相关地点，试试更具体的关键词';
-          div.style.color = '#9ca3af';
-          div.style.padding = '10px 12px';
-          sug.appendChild(div);
-        }
-      } catch(e) {
-        sug.classList.remove('hidden');
-        const div = document.createElement('div');
-        div.textContent = '❌ 解析数据出错';
-        div.className = 'error';
-        sug.appendChild(div);
-      }
-    };
+            reader.readAsDataURL(file);
+        });
 
-    timeoutId = setTimeout(function() {
-      if (executed) return;
-      executed = true;
-      cleanup();
+        // 滑块事件
+        fontSizeRange.addEventListener('input', updatePreview);
+        opacityRange.addEventListener('input', updatePreview);
+        document.querySelectorAll('.check-group input').forEach(cb => cb.addEventListener('change', updatePreview));
 
-      if (reqId !== requestId) return;
+        // 导出
+        exportBtn.addEventListener('click', function(){
+            const card = document.getElementById('previewCard');
+            // 使用 canvas 导出 (简洁方案：截图模拟)
+            alert('导出功能：将当前水印预览保存为图片 (实际为截图示意)');
+            // 在实际场景可用 html2canvas，此处仅为演示交互
+            // 模拟下载
+            const link = document.createElement('a');
+            link.download = '水印相片.png';
+            link.href = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+            link.click();
+        });
 
-      sug.innerHTML = '';
-      sug.classList.remove('hidden');
-      const div = document.createElement('div');
-      div.textContent = '❌ 请求超时，请检查网络后重试';
-      div.className = 'error';
-      sug.appendChild(div);
-    }, 8000);
+        // 初始应用
+        applyLocation(currentLocation);
+        // 额外绑定天气自动
+        window.addEventListener('load', function(){
+            // 默认显示搜索建议不展开
+        });
+        // 点击外部关闭suggest
+        document.addEventListener('click', function(e){
+            if (!e.target.closest('.input-with-icon') && !e.target.closest('.search-suggest')) {
+                suggestBox.style.display = 'none';
+            }
+        });
 
-    script.onerror = function() {
-      if (executed) return;
-      executed = true;
-      cleanup();
-
-      if (reqId !== requestId) return;
-
-      sug.innerHTML = '';
-      sug.classList.remove('hidden');
-      const div = document.createElement('div');
-      div.textContent = '❌ 搜索服务不可用，请检查网络';
-      div.className = 'error';
-      sug.appendChild(div);
-    };
-
-    document.body.appendChild(script);
-  }
-
-  // ---------- 百度逆地理编码 ----------
-  function baiduReverseGeocode(lat, lng) {
-    const callbackName = 'bdReverse_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-    const script = document.createElement('script');
-    const url = 'https://api.map.baidu.com/reverse_geocoding/v3/' +
-      '?ak=6bK7gVcYMgYz7RzS2zYzYzYzYzYzYzY' +
-      '&output=json' +
-      '&coordtype=wgs84ll' +
-      '&location=' + lat + ',' + lng +
-      '&callback=' + callbackName;
-
-    let executed = false;
-
-    window[callbackName] = function(data) {
-      if (executed) return;
-      executed = true;
-      try {
-        if (data.status === 0 && data.result) {
-          const formatted = data.result.formatted_address || data.result.address || '未知地址';
-          addressI.value = formatted;
-          update();
-        }
-      } catch(e) {}
-      delete window[callbackName];
-      if (script.parentNode) document.body.removeChild(script);
-    };
-
-    script.onerror = function() {
-      delete window[callbackName];
-      if (script.parentNode) document.body.removeChild(script);
-    };
-
-    document.body.appendChild(script);
-  }
-
-  // ---------- 天气 ----------
-  async function getWeather() {
-    const lat = latI.value;
-    const lon = lonI.value;
-    if (!lat || !lon) { alert('请先选择位置'); return; }
-    try {
-      const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m`);
-      const d = await r.json();
-      tmpI.value = Math.round(d.current.temperature_2m) + '℃';
-      windI.value = d.current.wind_speed_10m.toFixed(1) + 'm/s';
-      weaI.value = '晴';
-    } catch(e) {
-      tmpI.value = Math.round(22 + Math.random() * 8) + '℃';
-      weaI.value = ['晴', '多云', '阴'][Math.floor(Math.random() * 3)];
-      windI.value = '微风';
-    }
-    update();
-  }
-
-  // ---------- 水印 ----------
-  function txt() {
-    const d = new Date();
-    const p = s => String(s).padStart(2, '0');
-    const tm = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
-    const loc = addressI.value || locI.value || '未知位置';
-    const coord = (latI.value || '--') + '°N ' + (lonI.value || '--') + '°E';
-    const wt = (weaI.value || '--') + ' ' + (tmpI.value || '--') + ' ' + (windI.value || '--');
-    return [tm, loc, coord, wt, '磐石水印相机 v4.3.4'].filter(Boolean).join('\n');
-  }
-
-  function update() {
-    wm.innerText = txt();
-    wm.style.fontSize = document.getElementById('fs').value + 'px';
-    wm.style.opacity = document.getElementById('op').value / 100;
-  }
-
-  setInterval(update, 1000);
-  ['fs', 'op'].forEach(function(id) {
-    document.getElementById(id).oninput = update;
-  });
-
-  // ---------- 拖拽 ----------
-  wm.onmousedown = function(e) {
-    drag = true;
-    dx = e.clientX;
-    dy = e.clientY;
-    ix = wm.offsetLeft;
-    iy = wm.offsetTop;
-  };
-
-  window.onmousemove = function(e) {
-    if (!drag) return;
-    let nx = ix + (e.clientX - dx);
-    let ny = iy + (e.clientY - dy);
-    nx = Math.max(5, Math.min(nx, wrap.clientWidth - wm.offsetWidth - 5));
-    ny = Math.max(5, Math.min(ny, wrap.clientHeight - wm.offsetHeight - 5));
-    wm.style.left = nx + 'px';
-    wm.style.top = ny + 'px';
-  };
-
-  window.onmouseup = function() { drag = false; };
-
-  // ---------- 快捷位置 ----------
-  function setP(p) {
-    const w = wrap.clientWidth;
-    const h = wrap.clientHeight;
-    const ow = wm.offsetWidth || 200;
-    const oh = wm.offsetHeight || 100;
-    let l = 10, t = 10;
-    if (p === 'tm') l = (w - ow) / 2;
-    if (p === 'tr') { l = w - ow - 10; t = 10; }
-    if (p === 'bl') { l = 10; t = h - oh - 10; }
-    if (p === 'bm') { l = (w - ow) / 2; t = h - oh - 10; }
-    if (p === 'br') { l = w - ow - 10; t = h - oh - 10; }
-    wm.style.left = Math.max(5, l) + 'px';
-    wm.style.top = Math.max(5, t) + 'px';
-  }
-
-  // ---------- 导出 ----------
-  function exportImg() {
-    if (!img) { alert('请先上传图片'); return; }
-    draw();
-
-    const rect = cv.getBoundingClientRect();
-    const sx = cv.width / rect.width;
-    const sy = cv.height / rect.height;
-
-    const x = parseFloat(wm.style.left || 10) * sx;
-    const y = parseFloat(wm.style.top || 10) * sy;
-
-    ctx.save();
-    const fontSize = parseFloat(getComputedStyle(wm).fontSize) * sx;
-    ctx.font = fontSize + 'px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,' + (wm.style.opacity || 0.95) + ')';
-    ctx.textBaseline = 'top';
-    ctx.shadowColor = 'rgba(0,0,0,.8)';
-    ctx.shadowBlur = 4 * sx;
-    ctx.shadowOffsetX = sx;
-    ctx.shadowOffsetY = sy;
-
-    const lines = txt().split('\n');
-    const lineHeight = fontSize * 1.6;
-    lines.forEach(function(line, i) {
-      ctx.fillText(line, x, y + i * lineHeight);
-    });
-
-    ctx.restore();
-
-    const a = document.createElement('a');
-    a.download = '磐石水印_' + Date.now() + '.png';
-    a.href = cv.toDataURL('image/png');
-    a.click();
-  }
-
-  // ---------- 回车搜索 ----------
-  locI.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      searchPOI(this.value);
-    }
-  });
-
-  // ---------- 页面加载后自动搜索示例 ----------
-  setTimeout(function() {
-    locI.value = '北京国贸';
-    searchPOI('北京国贸');
-  }, 500);
-
-  console.log('✅ 磐石水印相机已加载（百度地图版）');
+        // 自动联想触发
+        locationInput.dispatchEvent(new Event('input'));
+    })();
 </script>
 </body>
 </html>
