@@ -1,32 +1,31 @@
-
+html
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>磐石水印相机 · 全城关联</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body{background:#1a1a2e;color:#eee;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei";margin:0;padding:16px}
-    .wrap{position:relative;background:#111;border-radius:8px;overflow:hidden}
-    canvas{display:block;max-width:100%}
-    .wm{position:absolute;color:rgba(255,255,255,.95);font-size:14px;line-height:1.6;text-shadow:0 1px 3px rgba(0,0,0,.8);cursor:move;white-space:pre;padding:4px;user-select:none}
-    input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radius:6px;padding:6px 8px;font-size:13px}
-    .btn{background:#2563eb;color:#fff;border:none;border-radius:6px;padding:8px 12px;cursor:pointer;font-size:13px}
-    .btn:hover{background:#1d4ed8}
-    .btn-green{background:#16a34a}.btn-green:hover{background:#15803d}
-    .btn-red{background:#dc2626}.btn-red:hover{background:#b91c1c}
-    .sug{background:#1f2937;border:1px solid #374151;border-radius:6px;max-height:160px;overflow-y:auto;position:absolute;z-index:10;width:calc(100% - 16px)}
-    .sug div{padding:8px;cursor:pointer;font-size:13px}.sug div:hover{background:#374151}
-    .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>磐石水印相机 · 腾讯风格</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body{background:#1a1a2e;color:#eee;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei";margin:0;padding:16px}
+.wrap{position:relative;background:#111;border-radius:8px;overflow:hidden}
+canvas{display:block;max-width:100%}
+.wm{position:absolute;color:rgba(255,255,255,.95);font-size:14px;line-height:1.6;text-shadow:0 1px 3px rgba(0,0,0,.8);cursor:move;white-space:pre;padding:4px;user-select:none}
+input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radius:6px;padding:6px 8px;font-size:13px}
+.btn{background:#2563eb;color:#fff;border:none;border-radius:6px;padding:8px 12px;cursor:pointer;font-size:13px}
+.btn:hover{background:#1d4ed8}
+.btn-green{background:#16a34a}.btn-green:hover{background:#15803d}
+.btn-red{background:#dc2626}.btn-red:hover{background:#b91c1c}
+.sug{background:#1f2937;border:1px solid #374151;border-radius:6px;max-height:160px;overflow-y:auto;position:absolute;z-index:10;width:calc(100% - 16px)}
+.sug div{padding:8px;cursor:pointer;font-size:13px}.sug div:hover{background:#374151}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+</style>
 </head>
 <body>
 
 <div class="flex gap-4 h-[95vh]">
-  <!-- 左侧面板 -->
   <div class="w-[320px] bg-gray-800 p-4 rounded-lg overflow-auto">
-    <h2 class="text-lg font-bold mb-4">磐石水印相机</h2>
+    <h2 class="text-lg font-bold mb-4">磐石水印相机 · 腾讯风格</h2>
 
     <div class="mb-3">
       <label class="text-sm">1. 上传图片</label>
@@ -34,14 +33,19 @@
     </div>
 
     <div class="mb-3 relative">
-      <label class="text-sm">2. 地点（输入自动联想 · 覆盖全中国）</label>
-      <input id="loc" placeholder="如：大连 / 上海 / 乌鲁木齐" class="w-full mt-1">
+      <label class="text-sm">2. 输入位置（腾讯地图自动补全）</label>
+      <input id="loc" placeholder="输入地点，自动获取详细地址" class="w-full mt-1">
       <div id="sug" class="sug hidden"></div>
     </div>
 
     <div class="grid grid-cols-2 gap-2 mb-3">
       <input id="lat" placeholder="纬度" class="mt-1">
       <input id="lon" placeholder="经度" class="mt-1">
+    </div>
+
+    <!-- 腾讯地图生成的详细地址 -->
+    <div class="mb-3">
+      <input id="address" placeholder="详细地址（自动获取）" class="w-full mt-1" readonly style="background:#374151;color:#ccc;">
     </div>
 
     <div class="grid grid-cols-3 gap-2 mb-3">
@@ -71,10 +75,9 @@
     </div>
 
     <button onclick="exportImg()" class="btn btn-red w-full">📥 导出图片</button>
-    <p class="text-xs text-gray-500 mt-3">* 天气联网获取，断网自动估算<br>* 拖拽水印可微调位置</p>
+    <p class="text-xs text-gray-500 mt-3">* 需腾讯地图API Key，地址格式与腾讯水印相机一致</p>
   </div>
 
-  <!-- 右侧画布 -->
   <div class="flex-1 wrap" id="wrap">
     <canvas id="cv"></canvas>
     <div id="wm" class="wm"></div>
@@ -83,369 +86,16 @@
 
 <script>
   /* ================================================================
-     扩展城市库 —— 覆盖中国所有省级行政单位 + 主要地级市
-     保留原有城市，新增全部中国城市 (按省分类，便于维护)
+     ⚠️ 请替换为你的腾讯地图API Key
+     获取地址：https://lbs.qq.com/  → 控制台 → 应用管理
      ================================================================ */
-  const cities = [
-    // —— 原有保留 ——
-    { n: "大连", lat: 38.91, lon: 121.61 },
-    { n: "北京", lat: 39.90, lon: 116.40 },
-    { n: "上海", lat: 31.23, lon: 121.47 },
-    { n: "广州", lat: 23.12, lon: 113.25 },
-    { n: "深圳", lat: 22.54, lon: 114.05 },
-    { n: "泰国达府", lat: 16.88, lon: 99.13 },
-    { n: "曼谷", lat: 13.75, lon: 100.50 },
-    { n: "东京", lat: 35.68, lon: 139.69 },
-    { n: "纽约", lat: 40.71, lon: -74.00 },
-    { n: "伦敦", lat: 51.50, lon: -0.12 },
-    { n: "新加坡", lat: 1.35, lon: 103.82 },
-
-    // ======== 中国所有省份 / 直辖市 / 自治区 / 特别行政区 ========
-    // 直辖市
-    { n: "天津", lat: 39.08, lon: 117.20 },
-    { n: "重庆", lat: 29.56, lon: 106.55 },
-    // 特别行政区
-    { n: "香港", lat: 22.32, lon: 114.17 },
-    { n: "澳门", lat: 22.20, lon: 113.55 },
-    // 台湾省 (主要城市)
-    { n: "台北", lat: 25.03, lon: 121.56 },
-    { n: "高雄", lat: 22.63, lon: 120.31 },
-    { n: "台中", lat: 24.15, lon: 120.68 },
-
-    // —— 东北 ——
-    { n: "沈阳", lat: 41.80, lon: 123.43 },
-    { n: "长春", lat: 43.89, lon: 125.32 },
-    { n: "哈尔滨", lat: 45.80, lon: 126.53 },
-    { n: "吉林", lat: 43.87, lon: 126.56 },
-    { n: "四平", lat: 43.17, lon: 124.37 },
-    { n: "辽源", lat: 42.89, lon: 125.14 },
-    { n: "通化", lat: 41.73, lon: 125.94 },
-    { n: "白山", lat: 41.94, lon: 126.42 },
-    { n: "松原", lat: 45.13, lon: 124.82 },
-    { n: "白城", lat: 45.62, lon: 122.84 },
-    { n: "鞍山", lat: 41.11, lon: 122.99 },
-    { n: "抚顺", lat: 41.87, lon: 123.92 },
-    { n: "本溪", lat: 41.29, lon: 123.77 },
-    { n: "丹东", lat: 40.12, lon: 124.38 },
-    { n: "锦州", lat: 41.10, lon: 121.14 },
-    { n: "营口", lat: 40.67, lon: 122.24 },
-    { n: "阜新", lat: 42.02, lon: 121.67 },
-    { n: "辽阳", lat: 41.26, lon: 123.18 },
-    { n: "盘锦", lat: 41.12, lon: 122.07 },
-    { n: "铁岭", lat: 42.29, lon: 123.84 },
-    { n: "朝阳", lat: 41.57, lon: 120.45 },
-    { n: "葫芦岛", lat: 40.75, lon: 120.84 },
-    { n: "齐齐哈尔", lat: 47.36, lon: 123.92 },
-    { n: "鸡西", lat: 45.28, lon: 130.97 },
-    { n: "鹤岗", lat: 47.35, lon: 130.30 },
-    { n: "双鸭山", lat: 46.65, lon: 131.16 },
-    { n: "大庆", lat: 46.59, lon: 125.10 },
-    { n: "伊春", lat: 47.73, lon: 128.84 },
-    { n: "佳木斯", lat: 46.80, lon: 130.36 },
-    { n: "七台河", lat: 45.77, lon: 131.00 },
-    { n: "牡丹江", lat: 44.58, lon: 129.60 },
-    { n: "黑河", lat: 50.24, lon: 127.53 },
-    { n: "绥化", lat: 46.65, lon: 126.97 },
-
-    // —— 华北 ——
-    { n: "石家庄", lat: 38.04, lon: 114.50 },
-    { n: "唐山", lat: 39.63, lon: 118.18 },
-    { n: "秦皇岛", lat: 39.93, lon: 119.60 },
-    { n: "邯郸", lat: 36.61, lon: 114.49 },
-    { n: "邢台", lat: 37.06, lon: 114.50 },
-    { n: "保定", lat: 38.87, lon: 115.48 },
-    { n: "张家口", lat: 40.81, lon: 114.88 },
-    { n: "承德", lat: 40.97, lon: 117.93 },
-    { n: "沧州", lat: 38.30, lon: 116.84 },
-    { n: "廊坊", lat: 39.52, lon: 116.70 },
-    { n: "衡水", lat: 37.74, lon: 115.69 },
-    { n: "太原", lat: 37.87, lon: 112.55 },
-    { n: "大同", lat: 40.09, lon: 113.30 },
-    { n: "阳泉", lat: 37.86, lon: 113.58 },
-    { n: "长治", lat: 36.20, lon: 113.11 },
-    { n: "晋城", lat: 35.49, lon: 112.85 },
-    { n: "朔州", lat: 39.33, lon: 112.43 },
-    { n: "晋中", lat: 37.68, lon: 112.75 },
-    { n: "运城", lat: 35.03, lon: 111.00 },
-    { n: "忻州", lat: 38.42, lon: 112.73 },
-    { n: "临汾", lat: 36.09, lon: 111.52 },
-    { n: "吕梁", lat: 37.52, lon: 111.13 },
-    { n: "呼和浩特", lat: 40.84, lon: 111.74 },
-    { n: "包头", lat: 40.65, lon: 109.84 },
-    { n: "乌海", lat: 39.65, lon: 106.80 },
-    { n: "赤峰", lat: 42.27, lon: 118.96 },
-    { n: "通辽", lat: 43.62, lon: 122.27 },
-    { n: "鄂尔多斯", lat: 39.61, lon: 109.78 },
-    { n: "呼伦贝尔", lat: 49.21, lon: 119.77 },
-    { n: "巴彦淖尔", lat: 40.74, lon: 107.39 },
-    { n: "乌兰察布", lat: 40.99, lon: 113.12 },
-
-    // —— 华东 ——
-    { n: "南京", lat: 32.06, lon: 118.78 },
-    { n: "无锡", lat: 31.49, lon: 120.31 },
-    { n: "徐州", lat: 34.21, lon: 117.28 },
-    { n: "常州", lat: 31.81, lon: 119.97 },
-    { n: "苏州", lat: 31.30, lon: 120.62 },
-    { n: "南通", lat: 32.00, lon: 120.89 },
-    { n: "连云港", lat: 34.60, lon: 119.22 },
-    { n: "淮安", lat: 33.61, lon: 119.02 },
-    { n: "盐城", lat: 33.35, lon: 120.16 },
-    { n: "扬州", lat: 32.39, lon: 119.42 },
-    { n: "镇江", lat: 32.20, lon: 119.45 },
-    { n: "泰州", lat: 32.46, lon: 119.91 },
-    { n: "宿迁", lat: 33.96, lon: 118.28 },
-    { n: "杭州", lat: 30.27, lon: 120.15 },
-    { n: "宁波", lat: 29.87, lon: 121.55 },
-    { n: "温州", lat: 28.00, lon: 120.70 },
-    { n: "嘉兴", lat: 30.77, lon: 120.76 },
-    { n: "湖州", lat: 30.87, lon: 120.10 },
-    { n: "绍兴", lat: 30.03, lon: 120.58 },
-    { n: "金华", lat: 29.10, lon: 119.65 },
-    { n: "衢州", lat: 28.94, lon: 118.87 },
-    { n: "舟山", lat: 29.99, lon: 122.20 },
-    { n: "台州", lat: 28.67, lon: 121.43 },
-    { n: "丽水", lat: 28.47, lon: 119.91 },
-    { n: "合肥", lat: 31.82, lon: 117.22 },
-    { n: "芜湖", lat: 31.35, lon: 118.43 },
-    { n: "蚌埠", lat: 32.94, lon: 117.38 },
-    { n: "淮南", lat: 32.62, lon: 116.99 },
-    { n: "马鞍山", lat: 31.67, lon: 118.51 },
-    { n: "淮北", lat: 33.98, lon: 116.79 },
-    { n: "铜陵", lat: 30.94, lon: 117.81 },
-    { n: "安庆", lat: 30.52, lon: 117.05 },
-    { n: "黄山", lat: 29.72, lon: 118.33 },
-    { n: "滁州", lat: 32.30, lon: 118.31 },
-    { n: "阜阳", lat: 32.90, lon: 115.81 },
-    { n: "宿州", lat: 33.64, lon: 116.98 },
-    { n: "六安", lat: 31.73, lon: 116.49 },
-    { n: "亳州", lat: 33.87, lon: 115.77 },
-    { n: "池州", lat: 30.66, lon: 117.49 },
-    { n: "宣城", lat: 30.94, lon: 118.75 },
-    { n: "福州", lat: 26.07, lon: 119.29 },
-    { n: "厦门", lat: 24.48, lon: 118.09 },
-    { n: "莆田", lat: 25.45, lon: 119.01 },
-    { n: "三明", lat: 26.26, lon: 117.63 },
-    { n: "泉州", lat: 24.88, lon: 118.67 },
-    { n: "漳州", lat: 24.52, lon: 117.65 },
-    { n: "南平", lat: 26.64, lon: 118.17 },
-    { n: "龙岩", lat: 25.09, lon: 117.02 },
-    { n: "宁德", lat: 26.66, lon: 119.54 },
-    { n: "南昌", lat: 28.68, lon: 115.86 },
-    { n: "景德镇", lat: 29.27, lon: 117.18 },
-    { n: "萍乡", lat: 27.62, lon: 113.85 },
-    { n: "九江", lat: 29.71, lon: 116.00 },
-    { n: "新余", lat: 27.82, lon: 114.93 },
-    { n: "鹰潭", lat: 28.27, lon: 117.06 },
-    { n: "赣州", lat: 25.83, lon: 114.93 },
-    { n: "吉安", lat: 27.11, lon: 114.99 },
-    { n: "宜春", lat: 27.81, lon: 114.42 },
-    { n: "抚州", lat: 27.98, lon: 116.36 },
-    { n: "上饶", lat: 28.45, lon: 117.94 },
-    { n: "济南", lat: 36.65, lon: 117.02 },
-    { n: "青岛", lat: 36.07, lon: 120.38 },
-    { n: "淄博", lat: 36.82, lon: 118.06 },
-    { n: "枣庄", lat: 34.81, lon: 117.32 },
-    { n: "东营", lat: 37.43, lon: 118.67 },
-    { n: "烟台", lat: 37.54, lon: 121.40 },
-    { n: "潍坊", lat: 36.72, lon: 119.16 },
-    { n: "济宁", lat: 35.42, lon: 116.59 },
-    { n: "泰安", lat: 36.19, lon: 117.08 },
-    { n: "威海", lat: 37.51, lon: 122.11 },
-    { n: "日照", lat: 35.42, lon: 119.53 },
-    { n: "临沂", lat: 35.06, lon: 118.35 },
-    { n: "德州", lat: 37.45, lon: 116.36 },
-    { n: "聊城", lat: 36.45, lon: 115.98 },
-    { n: "滨州", lat: 37.38, lon: 118.03 },
-    { n: "菏泽", lat: 35.24, lon: 115.47 },
-
-    // —— 中南 ——
-    { n: "郑州", lat: 34.75, lon: 113.62 },
-    { n: "开封", lat: 34.80, lon: 114.31 },
-    { n: "洛阳", lat: 34.62, lon: 112.45 },
-    { n: "平顶山", lat: 33.77, lon: 113.19 },
-    { n: "安阳", lat: 36.10, lon: 114.35 },
-    { n: "鹤壁", lat: 35.75, lon: 114.30 },
-    { n: "新乡", lat: 35.30, lon: 113.93 },
-    { n: "焦作", lat: 35.24, lon: 113.24 },
-    { n: "濮阳", lat: 35.76, lon: 115.03 },
-    { n: "许昌", lat: 34.03, lon: 113.85 },
-    { n: "漯河", lat: 33.58, lon: 114.03 },
-    { n: "三门峡", lat: 34.77, lon: 111.19 },
-    { n: "南阳", lat: 33.00, lon: 112.53 },
-    { n: "商丘", lat: 34.43, lon: 115.65 },
-    { n: "信阳", lat: 32.13, lon: 114.09 },
-    { n: "周口", lat: 33.63, lon: 114.64 },
-    { n: "驻马店", lat: 33.01, lon: 114.03 },
-    { n: "济源", lat: 35.07, lon: 112.58 },
-    { n: "武汉", lat: 30.60, lon: 114.30 },
-    { n: "黄石", lat: 30.22, lon: 115.08 },
-    { n: "十堰", lat: 32.63, lon: 110.77 },
-    { n: "宜昌", lat: 30.69, lon: 111.28 },
-    { n: "襄阳", lat: 32.01, lon: 112.12 },
-    { n: "鄂州", lat: 30.40, lon: 114.89 },
-    { n: "荆门", lat: 31.04, lon: 112.20 },
-    { n: "孝感", lat: 30.92, lon: 113.91 },
-    { n: "荆州", lat: 30.33, lon: 112.24 },
-    { n: "黄冈", lat: 30.45, lon: 114.88 },
-    { n: "咸宁", lat: 29.83, lon: 114.32 },
-    { n: "随州", lat: 31.69, lon: 113.37 },
-    { n: "恩施", lat: 30.29, lon: 109.48 },
-    { n: "长沙", lat: 28.22, lon: 112.97 },
-    { n: "株洲", lat: 27.84, lon: 113.15 },
-    { n: "湘潭", lat: 27.83, lon: 112.95 },
-    { n: "衡阳", lat: 26.89, lon: 112.57 },
-    { n: "邵阳", lat: 27.24, lon: 111.47 },
-    { n: "岳阳", lat: 29.37, lon: 113.13 },
-    { n: "常德", lat: 29.03, lon: 111.70 },
-    { n: "张家界", lat: 29.12, lon: 110.48 },
-    { n: "益阳", lat: 28.55, lon: 112.34 },
-    { n: "郴州", lat: 25.77, lon: 113.03 },
-    { n: "永州", lat: 26.43, lon: 111.61 },
-    { n: "怀化", lat: 27.57, lon: 110.00 },
-    { n: "娄底", lat: 27.70, lon: 111.99 },
-    { n: "湘西", lat: 28.28, lon: 109.74 },
-    { n: "南宁", lat: 22.82, lon: 108.36 },
-    { n: "柳州", lat: 24.31, lon: 109.41 },
-    { n: "桂林", lat: 25.27, lon: 110.29 },
-    { n: "梧州", lat: 23.48, lon: 111.27 },
-    { n: "北海", lat: 21.48, lon: 109.12 },
-    { n: "防城港", lat: 21.68, lon: 108.35 },
-    { n: "钦州", lat: 21.97, lon: 108.65 },
-    { n: "贵港", lat: 23.11, lon: 109.60 },
-    { n: "玉林", lat: 22.63, lon: 110.15 },
-    { n: "百色", lat: 23.90, lon: 106.61 },
-    { n: "贺州", lat: 24.41, lon: 111.56 },
-    { n: "河池", lat: 24.69, lon: 108.08 },
-    { n: "来宾", lat: 23.75, lon: 109.22 },
-    { n: "崇左", lat: 22.41, lon: 107.37 },
-    { n: "海口", lat: 20.02, lon: 110.34 },
-    { n: "三亚", lat: 18.25, lon: 109.50 },
-    { n: "三沙", lat: 16.83, lon: 112.33 },
-    { n: "儋州", lat: 19.52, lon: 109.58 },
-
-    // —— 西南 ——
-    { n: "成都", lat: 30.57, lon: 104.06 },
-    { n: "自贡", lat: 29.34, lon: 104.77 },
-    { n: "攀枝花", lat: 26.58, lon: 101.72 },
-    { n: "泸州", lat: 28.87, lon: 105.44 },
-    { n: "德阳", lat: 31.13, lon: 104.40 },
-    { n: "绵阳", lat: 31.47, lon: 104.68 },
-    { n: "广元", lat: 32.43, lon: 105.82 },
-    { n: "遂宁", lat: 30.52, lon: 105.59 },
-    { n: "内江", lat: 29.58, lon: 105.06 },
-    { n: "乐山", lat: 29.55, lon: 103.77 },
-    { n: "南充", lat: 30.79, lon: 106.11 },
-    { n: "眉山", lat: 30.08, lon: 103.84 },
-    { n: "宜宾", lat: 28.75, lon: 104.64 },
-    { n: "广安", lat: 30.46, lon: 106.64 },
-    { n: "达州", lat: 31.21, lon: 107.50 },
-    { n: "雅安", lat: 29.98, lon: 103.01 },
-    { n: "巴中", lat: 31.87, lon: 106.76 },
-    { n: "资阳", lat: 30.13, lon: 104.64 },
-    { n: "阿坝", lat: 31.90, lon: 102.22 },
-    { n: "甘孜", lat: 30.05, lon: 101.96 },
-    { n: "凉山", lat: 27.88, lon: 102.26 },
-    { n: "贵阳", lat: 26.65, lon: 106.63 },
-    { n: "六盘水", lat: 26.59, lon: 104.83 },
-    { n: "遵义", lat: 27.72, lon: 106.94 },
-    { n: "安顺", lat: 26.25, lon: 105.93 },
-    { n: "毕节", lat: 27.30, lon: 105.29 },
-    { n: "铜仁", lat: 27.73, lon: 109.19 },
-    { n: "黔西南", lat: 25.09, lon: 104.90 },
-    { n: "黔东南", lat: 26.58, lon: 107.98 },
-    { n: "黔南", lat: 26.25, lon: 107.52 },
-    { n: "昆明", lat: 25.04, lon: 102.71 },
-    { n: "曲靖", lat: 25.49, lon: 103.80 },
-    { n: "玉溪", lat: 24.35, lon: 102.54 },
-    { n: "保山", lat: 25.12, lon: 99.16 },
-    { n: "昭通", lat: 27.34, lon: 103.72 },
-    { n: "丽江", lat: 26.86, lon: 100.23 },
-    { n: "普洱", lat: 22.82, lon: 100.97 },
-    { n: "临沧", lat: 23.88, lon: 100.08 },
-    { n: "楚雄", lat: 25.04, lon: 101.54 },
-    { n: "红河", lat: 23.37, lon: 103.38 },
-    { n: "文山", lat: 23.40, lon: 104.23 },
-    { n: "西双版纳", lat: 22.01, lon: 100.80 },
-    { n: "大理", lat: 25.61, lon: 100.27 },
-    { n: "德宏", lat: 24.43, lon: 98.58 },
-    { n: "怒江", lat: 25.85, lon: 98.86 },
-    { n: "迪庆", lat: 27.82, lon: 99.70 },
-    { n: "拉萨", lat: 29.64, lon: 91.13 },
-    { n: "日喀则", lat: 29.27, lon: 88.88 },
-    { n: "昌都", lat: 31.14, lon: 97.17 },
-    { n: "林芝", lat: 29.65, lon: 94.35 },
-    { n: "山南", lat: 29.25, lon: 91.77 },
-    { n: "那曲", lat: 31.48, lon: 92.06 },
-    { n: "阿里", lat: 32.50, lon: 80.10 },
-
-    // —— 西北 ——
-    { n: "西安", lat: 34.27, lon: 108.93 },
-    { n: "铜川", lat: 34.90, lon: 108.94 },
-    { n: "宝鸡", lat: 34.36, lon: 107.24 },
-    { n: "咸阳", lat: 34.33, lon: 108.70 },
-    { n: "渭南", lat: 34.52, lon: 109.48 },
-    { n: "延安", lat: 36.59, lon: 109.49 },
-    { n: "汉中", lat: 33.08, lon: 107.03 },
-    { n: "榆林", lat: 38.28, lon: 109.73 },
-    { n: "安康", lat: 32.69, lon: 109.02 },
-    { n: "商洛", lat: 33.87, lon: 109.93 },
-    { n: "兰州", lat: 36.07, lon: 103.83 },
-    { n: "嘉峪关", lat: 39.80, lon: 98.28 },
-    { n: "金昌", lat: 38.52, lon: 102.18 },
-    { n: "白银", lat: 36.54, lon: 104.17 },
-    { n: "天水", lat: 34.58, lon: 105.72 },
-    { n: "武威", lat: 37.93, lon: 102.63 },
-    { n: "张掖", lat: 38.93, lon: 100.45 },
-    { n: "平凉", lat: 35.54, lon: 106.68 },
-    { n: "酒泉", lat: 39.73, lon: 98.49 },
-    { n: "庆阳", lat: 35.71, lon: 107.64 },
-    { n: "定西", lat: 35.58, lon: 104.62 },
-    { n: "陇南", lat: 33.40, lon: 104.92 },
-    { n: "临夏", lat: 35.60, lon: 103.21 },
-    { n: "甘南", lat: 34.98, lon: 102.91 },
-    { n: "西宁", lat: 36.62, lon: 101.78 },
-    { n: "海东", lat: 36.50, lon: 102.10 },
-    { n: "海北", lat: 36.96, lon: 100.90 },
-    { n: "黄南", lat: 35.52, lon: 102.01 },
-    { n: "海南州", lat: 36.28, lon: 100.62 },
-    { n: "果洛", lat: 34.47, lon: 100.24 },
-    { n: "玉树", lat: 33.00, lon: 97.01 },
-    { n: "海西", lat: 37.37, lon: 97.37 },
-    { n: "银川", lat: 38.47, lon: 106.23 },
-    { n: "石嘴山", lat: 39.01, lon: 106.38 },
-    { n: "吴忠", lat: 37.99, lon: 106.19 },
-    { n: "固原", lat: 36.00, lon: 106.28 },
-    { n: "中卫", lat: 37.50, lon: 105.20 },
-    { n: "乌鲁木齐", lat: 43.82, lon: 87.61 },
-    { n: "克拉玛依", lat: 45.58, lon: 84.88 },
-    { n: "吐鲁番", lat: 42.94, lon: 89.18 },
-    { n: "哈密", lat: 42.82, lon: 93.51 },
-    { n: "昌吉", lat: 44.02, lon: 87.31 },
-    { n: "博尔塔拉", lat: 44.90, lon: 82.06 },
-    { n: "巴音郭楞", lat: 41.76, lon: 86.15 },
-    { n: "阿克苏", lat: 41.17, lon: 80.26 },
-    { n: "克孜勒苏", lat: 39.71, lon: 76.17 },
-    { n: "喀什", lat: 39.47, lon: 75.99 },
-    { n: "和田", lat: 37.11, lon: 79.91 },
-    { n: "伊犁", lat: 43.92, lon: 81.32 },
-    { n: "塔城", lat: 46.75, lon: 83.00 },
-    { n: "阿勒泰", lat: 47.83, lon: 88.13 },
-    { n: "石河子", lat: 44.31, lon: 86.05 },
-    { n: "阿拉尔", lat: 40.55, lon: 81.28 },
-    { n: "图木舒克", lat: 39.87, lon: 79.06 },
-    { n: "五家渠", lat: 44.15, lon: 87.54 },
-    { n: "北屯", lat: 47.35, lon: 87.82 },
-    { n: "铁门关", lat: 41.82, lon: 86.18 },
-    { n: "双河", lat: 44.84, lon: 82.35 },
-    { n: "可克达拉", lat: 43.95, lon: 81.08 },
-    { n: "昆玉", lat: 37.28, lon: 79.29 },
-    { n: "胡杨河", lat: 44.70, lon: 84.88 }
-  ];
+  const TENCENT_MAP_KEY = 'YOUR_TENCENT_MAP_KEY';  // 🔑 替换这里
 
   /* ========= DOM ========= */
   const cv=document.getElementById("cv"),ctx=cv.getContext("2d");
   const wm=document.getElementById("wm"),wrap=document.getElementById("wrap");
   const locI=document.getElementById("loc"),latI=document.getElementById("lat"),lonI=document.getElementById("lon");
+  const addressI=document.getElementById("address");
   const weaI=document.getElementById("wea"),tmpI=document.getElementById("tmp"),windI=document.getElementById("wind");
   const sug=document.getElementById("sug");
   let img=null,drag=false,dx=0,dy=0,ix=0,iy=0;
@@ -459,16 +109,64 @@
   };
   function draw(){if(img)ctx.drawImage(img,0,0);}
 
-  /* ========= 地点联想 (全城市库) ========= */
+  /* ========= 腾讯地图地点搜索 + 逆地理编码 ========= */
+  let searchTimer = null;
+
   locI.oninput=()=>{
-    const k=locI.value.trim();sug.innerHTML="";if(!k){sug.classList.add("hidden");return;}
-    const rs=cities.filter(c=>c.n.includes(k)||c.n.toLowerCase().includes(k.toLowerCase()));
-    if(rs.length){sug.classList.remove("hidden");rs.forEach(c=>{
-      const d=document.createElement("div");d.textContent=c.n;d.onclick=()=>{locI.value=c.n;latI.value=c.lat;lonI.value=c.lon;sug.classList.add("hidden");update()};sug.appendChild(d);
-    });}else sug.classList.add("hidden");
+    clearTimeout(searchTimer);
+    const keyword = locI.value.trim();
+    sug.innerHTML = '';
+    if(!keyword || keyword.length < 2) { sug.classList.add('hidden'); return; }
+
+    // 防抖
+    searchTimer = setTimeout(() => {
+      // 1. 地点搜索（获取经纬度）
+      fetch(`https://apis.map.qq.com/ws/place/v1/suggestion?keyword=${encodeURIComponent(keyword)}&key=${TENCENT_MAP_KEY}`)
+        .then(res => res.json())
+        .then(data => {
+          if(data.status !== 0 || !data.data || data.data.length === 0) {
+            sug.classList.add('hidden');
+            return;
+          }
+
+          sug.classList.remove('hidden');
+          // 显示前5个建议
+          data.data.slice(0, 5).forEach(item => {
+            const div = document.createElement('div');
+            div.textContent = item.title + (item.address ? ' · ' + item.address : '');
+            div.onclick = () => {
+              locI.value = item.title;
+              latI.value = item.location.lat;
+              lonI.value = item.location.lng;
+              sug.classList.add('hidden');
+              // 2. 逆地理编码获取详细地址
+              reverseGeocode(item.location.lat, item.location.lng);
+              update();
+            };
+            sug.appendChild(div);
+          });
+        })
+        .catch(() => sug.classList.add('hidden'));
+    }, 300);
   };
 
-  /* ========= 天气获取 ========= */
+  // 逆地理编码（获取结构化地址）
+  function reverseGeocode(lat, lon) {
+    fetch(`https://apis.map.qq.com/ws/geocoder/v1/?location=${lat},${lon}&key=${TENCENT_MAP_KEY}&get_poi=0`)
+      .then(res => res.json())
+      .then(data => {
+        if(data.status === 0 && data.result) {
+          // 腾讯格式：国家/省/市/区/街道/门牌号
+          const addr = data.result.address;
+          const formatted = addr || data.result.formatted_addresses?.recommend || '未知地址';
+          addressI.value = formatted;
+          update();
+        }
+      })
+      .catch(() => {});
+  }
+
+  /* ========= 天气获取（不变） ========= */
   async function getWeather(){
     const lat=latI.value,lon=lonI.value;
     if(!lat||!lon){alert("请先选择或输入地点");return;}
@@ -487,14 +185,23 @@
     update();
   }
 
-  /* ========= 水印文本 ========= */
+  /* ========= 水印文本（腾讯风格） ========= */
   function txt(){
     const d=new Date();
     const p=s=>String(s).padStart(2,"0");
     const tm=`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
-    const lc=`${locI.value} ${latI.value}°N ${lonI.value}°E`;
-    const wt=`${weaI.value} ${tmpI.value} ${windI.value}`;
-    return [tm,lc,wt,"磐石水印相机 v4.3.4"].filter(Boolean).join("\n");
+    
+    // 优先使用腾讯逆地理编码的详细地址，否则使用手动输入
+    let locationLine = addressI.value || locI.value;
+    if(!locationLine && latI.value && lonI.value) {
+      locationLine = `${latI.value}°N ${lonI.value}°E`;
+    }
+
+    const coordLine = `${latI.value || '--'}°N ${lonI.value || '--'}°E`;
+    const wt = `${weaI.value || '--'} ${tmpI.value || '--'} ${windI.value || '--'}`;
+    
+    // 腾讯水印相机典型格式：时间、详细地址、坐标、天气、品牌
+    return [tm, locationLine, coordLine, wt, "磐石水印相机 v4.3.4"].filter(Boolean).join("\n");
   }
 
   function update(){
