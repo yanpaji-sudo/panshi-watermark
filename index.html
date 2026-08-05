@@ -3,10 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>磐石水印相机 · POI搜索版</title>
+<title>磐石水印相机 · 极速POI版</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<!-- 高德地图JS API v2.0 -->
-<script src="https://webapi.amap.com/maps?v=2.0&key=d3b6d6b5a3d4b8f7c9e2a1f5d6c7b8e9&plugin=AMap.Autocomplete,AMap.Geocoder&_=1665813745235"></script>
 <style>
 body{background:#1a1a2e;color:#eee;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei";margin:0;padding:16px}
 .wrap{position:relative;background:#111;border-radius:8px;overflow:hidden}
@@ -17,21 +15,20 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
 .btn:hover{background:#1d4ed8}
 .btn-green{background:#16a34a}.btn-green:hover{background:#15803d}
 .btn-red{background:#dc2626}.btn-red:hover{background:#b91c1c}
-.sug{background:#1f2937;border:1px solid #374151;border-radius:6px;max-height:200px;overflow-y:auto;position:absolute;z-index:10;width:100%;margin-top:4px}
+.sug{background:#1f2937;border:1px solid #374151;border-radius:6px;max-height:220px;overflow-y:auto;position:absolute;z-index:10;width:100%;margin-top:4px}
 .sug div{padding:10px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #2a2a3e;color:#eee}
 .sug div:hover{background:#374151}
 .sug div:last-child{border-bottom:none}
-.sug .highlight{color:#60a5fa}
 .sug .sub{color:#9ca3af;font-size:12px;margin-left:8px}
+.sug .loading{color:#ffd93d;padding:10px 12px}
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
-.loading{color:#ffd93d;padding:8px}
 </style>
 </head>
 <body>
 
 <div class="flex gap-4 h-[95vh]">
   <div class="w-[320px] bg-gray-800 p-4 rounded-lg overflow-auto">
-    <h2 class="text-lg font-bold mb-4">磐石水印相机 · POI搜索</h2>
+    <h2 class="text-lg font-bold mb-4">磐石水印相机 · 极速POI</h2>
 
     <div class="mb-3">
       <label class="text-sm">1. 上传图片</label>
@@ -40,7 +37,7 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
 
     <div class="mb-3 relative">
       <label class="text-sm">2. 输入位置（自动联想街道/小区/村庄）</label>
-      <input id="loc" placeholder="输入地点，如：国贸 / 望京SOHO" class="w-full mt-1">
+      <input id="loc" placeholder="输入地点，如：国贸 / 望京SOHO" class="w-full mt-1" oninput="searchPOI(this.value)">
       <div id="sug" class="sug hidden"></div>
     </div>
 
@@ -80,7 +77,7 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
     </div>
 
     <button onclick="exportImg()" class="btn btn-red w-full">📥 导出图片</button>
-    <p class="text-xs text-gray-500 mt-3">* 使用高德地图POI搜索，可联想街道/小区/村庄<br>* 如Key失效请替换为自己的高德JS API Key</p>
+    <p class="text-xs text-gray-500 mt-3">* 使用高德地图JSONP接口，极速响应<br>* 可搜索街道、小区、写字楼、村庄等</p>
   </div>
 
   <div class="flex-1 wrap" id="wrap">
@@ -91,11 +88,12 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
 
 <script>
   /* ================================================================
-     高德地图 POI 自动补全 (AMap.Autocomplete)
-     可搜索：街道、小区、写字楼、村庄、商圈等
-     Key: d3b6d6b5a3d4b8f7c9e2a1f5d6c7b8e9 (公开测试Key)
-     如失效请到 https://lbs.amap.com/ 申请替换
+     使用高德地图 WebService API + JSONP 方式
+     无需加载庞大的 JS SDK，响应极快
+     Key: 使用公开测试Key，建议替换为自己的
      ================================================================ */
+
+  const AMAP_KEY = 'd3b6d6b5a3d4b8f7c9e2a1f5d6c7b8e9';
 
   /* ========= DOM ========= */
   const cv=document.getElementById("cv"),ctx=cv.getContext("2d");
@@ -105,51 +103,20 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
   const weaI=document.getElementById("wea"),tmpI=document.getElementById("tmp"),windI=document.getElementById("wind");
   const sug=document.getElementById("sug");
   let img=null,drag=false,dx=0,dy=0,ix=0,iy=0;
-
-  // 高德地图对象
-  let autoComplete = null;
-  let geocoder = null;
-  let isInitialized = false;
-
-  /* ========= 初始化高德地图服务 ========= */
-  function initAmap() {
-    if (isInitialized) return true;
-    
-    try {
-      // 确保 AMap 已加载
-      if (typeof AMap === 'undefined') {
-        console.warn('AMap未加载，等待中...');
-        return false;
-      }
-      
-      // 自动补全
-      autoComplete = new AMap.Autocomplete({
-        type: '全部',  // 搜索类型
-        city: '全国',
-        citylimit: false
-      });
-      
-      // 地理编码
-      geocoder = new AMap.Geocoder({
-        city: '全国',
-        radius: 1000
-      });
-      
-      isInitialized = true;
-      console.log('高德地图API初始化成功');
-      return true;
-    } catch(e) {
-      console.error('初始化失败:', e);
-      return false;
-    }
-  }
-
-  /* ========= POI 搜索（自动联想） ========= */
   let searchTimer = null;
 
-  locI.addEventListener('input', function() {
+  /* ========= 图片上传 ========= */
+  document.getElementById("file").onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    const r=new FileReader();
+    r.onload=ev=>{img=new Image();img.onload=()=>{cv.width=img.width;cv.height=img.height;draw();setP("bl")};img.src=ev.target.result};
+    r.readAsDataURL(f);
+  };
+  function draw(){if(img)ctx.drawImage(img,0,0);}
+
+  /* ========= POI 搜索（JSONP方式，极速） ========= */
+  function searchPOI(keyword) {
     clearTimeout(searchTimer);
-    const keyword = this.value.trim();
     sug.innerHTML = '';
     
     if (!keyword || keyword.length < 1) {
@@ -157,30 +124,31 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
       return;
     }
 
-    // 尝试初始化
-    if (!isInitialized) {
-      const ok = initAmap();
-      if (!ok) {
-        sug.classList.remove('hidden');
-        const div = document.createElement('div');
-        div.textContent = '⏳ 地图服务加载中，请稍候...';
-        div.className = 'loading';
-        sug.appendChild(div);
-        return;
-      }
-    }
-
-    // 防抖
     searchTimer = setTimeout(() => {
-      autoComplete.search(keyword, function(status, result) {
-        if (status === 'complete' && result.tips && result.tips.length > 0) {
+      const callbackName = 'amapPOI_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+      
+      // 显示加载状态
+      sug.classList.remove('hidden');
+      const loadDiv = document.createElement('div');
+      loadDiv.textContent = '⏳ 搜索中...';
+      loadDiv.className = 'loading';
+      sug.appendChild(loadDiv);
+      
+      // 创建 script 标签请求 JSONP
+      const script = document.createElement('script');
+      const url = `https://restapi.amap.com/v3/assistant/inputtips?keywords=${encodeURIComponent(keyword)}&key=${AMAP_KEY}&output=jsonp&callback=${callbackName}`;
+      
+      // 定义回调
+      window[callbackName] = function(data) {
+        sug.innerHTML = '';
+        
+        if (data.status === '1' && data.tips && data.tips.length > 0) {
           sug.classList.remove('hidden');
           
-          result.tips.forEach((tip, index) => {
+          // 显示前10个结果
+          data.tips.slice(0, 10).forEach(tip => {
             const div = document.createElement('div');
-            
-            // 高亮匹配文字
-            const name = tip.name || '';
+            const name = tip.name || '未知';
             const district = tip.district || '';
             const address = tip.address || '';
             
@@ -192,16 +160,17 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
             div.onclick = function() {
               locI.value = name;
               
-              // 如果有经纬度直接用
+              // 如果有经纬度直接使用
               if (tip.location) {
-                const lng = tip.location.lng || tip.location.split(',')[0];
-                const lat = tip.location.lat || tip.location.split(',')[1];
-                latI.value = parseFloat(lat).toFixed(6);
-                lonI.value = parseFloat(lng).toFixed(6);
+                const parts = tip.location.split(',');
+                const lng = parseFloat(parts[0]);
+                const lat = parseFloat(parts[1]);
+                latI.value = lat.toFixed(6);
+                lonI.value = lng.toFixed(6);
                 // 获取详细地址
                 getAddressByCoord(lat, lng);
               } else {
-                // 如果没有坐标，使用地理编码获取
+                // 使用地理编码获取坐标
                 geocodeAddress(name);
               }
               
@@ -211,7 +180,6 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
             sug.appendChild(div);
           });
         } else {
-          // 没有结果时显示提示
           sug.classList.remove('hidden');
           const div = document.createElement('div');
           div.textContent = '未找到相关地点，试试更具体的关键词';
@@ -219,59 +187,89 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
           div.style.padding = '10px 12px';
           sug.appendChild(div);
         }
-      });
-    }, 300);
-  });
-
-  /* ========= 地理编码（地名→坐标） ========= */
-  function geocodeAddress(address) {
-    if (!geocoder) return;
-    
-    geocoder.getLocation(address, function(status, result) {
-      if (status === 'complete' && result.geocodes && result.geocodes.length > 0) {
-        const geo = result.geocodes[0];
-        latI.value = geo.location.getLat().toFixed(6);
-        lonI.value = geo.location.getLng().toFixed(6);
-        addressI.value = geo.formattedAddress || address;
-        update();
-      }
-    });
+        
+        // 清理
+        delete window[callbackName];
+        if (script.parentNode) document.body.removeChild(script);
+      };
+      
+      // 错误处理
+      script.onerror = function() {
+        sug.innerHTML = '';
+        sug.classList.remove('hidden');
+        const div = document.createElement('div');
+        div.textContent = '❌ 搜索服务请求失败，请检查网络或Key';
+        div.style.color = '#ff6b6b';
+        div.style.padding = '10px 12px';
+        sug.appendChild(div);
+        delete window[callbackName];
+        if (script.parentNode) document.body.removeChild(script);
+      };
+      
+      document.body.appendChild(script);
+    }, 200);
   }
 
-  /* ========= 逆地理编码（坐标→详细地址） ========= */
-  function getAddressByCoord(lat, lon) {
-    if (!geocoder) return;
+  /* ========= 地理编码（JSONP） ========= */
+  function geocodeAddress(address) {
+    const callbackName = 'amapGeo_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+    const script = document.createElement('script');
+    const url = `https://restapi.amap.com/v3/geocode/geo?address=${encodeURIComponent(address)}&key=${AMAP_KEY}&output=jsonp&callback=${callbackName}`;
     
-    geocoder.getAddress(new AMap.LngLat(lon, lat), function(status, result) {
-      if (status === 'complete' && result.info === 'OK') {
-        const regeo = result.regeocode;
-        const formatted = regeo.formattedAddress || regeo.address || '未知地址';
+    window[callbackName] = function(data) {
+      if (data.status === '1' && data.geocodes && data.geocodes.length > 0) {
+        const geo = data.geocodes[0];
+        const parts = geo.location.split(',');
+        latI.value = parseFloat(parts[1]).toFixed(6);
+        lonI.value = parseFloat(parts[0]).toFixed(6);
+        addressI.value = geo.formatted_address || address;
+        update();
+      }
+      delete window[callbackName];
+      if (script.parentNode) document.body.removeChild(script);
+    };
+    
+    script.onerror = function() {
+      delete window[callbackName];
+      if (script.parentNode) document.body.removeChild(script);
+    };
+    
+    document.body.appendChild(script);
+  }
+
+  /* ========= 逆地理编码（JSONP） ========= */
+  function getAddressByCoord(lat, lon) {
+    const callbackName = 'amapReverse_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+    const script = document.createElement('script');
+    const url = `https://restapi.amap.com/v3/geocode/regeo?location=${lon},${lat}&key=${AMAP_KEY}&output=jsonp&callback=${callbackName}`;
+    
+    window[callbackName] = function(data) {
+      if (data.status === '1' && data.regeocode) {
+        const formatted = data.regeocode.formatted_address || data.regeocode.address || '未知地址';
         addressI.value = formatted;
         update();
-      } else {
-        addressI.value = `纬度 ${lat}, 经度 ${lon}`;
       }
-    });
+      delete window[callbackName];
+      if (script.parentNode) document.body.removeChild(script);
+    };
+    
+    script.onerror = function() {
+      delete window[callbackName];
+      if (script.parentNode) document.body.removeChild(script);
+    };
+    
+    document.body.appendChild(script);
   }
-
-  /* ========= 图片上传 ========= */
-  document.getElementById("file").onchange=e=>{
-    const f=e.target.files[0];if(!f)return;
-    const r=new FileReader();
-    r.onload=ev=>{img=new Image();img.onload=()=>{cv.width=img.width;cv.height=img.height;draw();setP("bl")};img.src=ev.target.result};
-    r.readAsDataURL(f);
-  };
-  function draw(){if(img)ctx.drawImage(img,0,0);}
 
   /* ========= 天气获取 ========= */
   async function getWeather(){
     const lat=latI.value,lon=lonI.value;
-    if(!lat||!lon){alert("请先选择或定位位置");return;}
+    if(!lat||!lon){alert("请先选择位置");return;}
     try{
       const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m`);
       const d=await r.json();
       tmpI.value=`${Math.round(d.current.temperature_2m)}℃`;
-      windI.value=`风速${d.current.wind_speed_10m.toFixed(1)}m/s`;
+      windI.value=`${d.current.wind_speed_10m.toFixed(1)}m/s`;
       weaI.value="晴";
     }catch{
       tmpI.value=`${Math.round(25+Math.random()*10)}℃`;
@@ -343,30 +341,12 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
     a.click();
   }
 
-  /* ========= 页面加载初始化 ========= */
-  window.addEventListener('load', function() {
-    // 等待高德地图加载
-    let attempts = 0;
-    const maxAttempts = 20;
-    
-    const tryInit = setInterval(() => {
-      attempts++;
-      if (typeof AMap !== 'undefined') {
-        clearInterval(tryInit);
-        initAmap();
-        console.log('高德地图已就绪');
-      } else if (attempts >= maxAttempts) {
-        clearInterval(tryInit);
-        console.warn('高德地图加载超时，请检查网络或Key');
-        // 提示用户
-        sug.classList.remove('hidden');
-        const div = document.createElement('div');
-        div.textContent = '⚠️ 高德地图加载失败，请刷新重试或检查Key';
-        div.style.color = '#ff6b6b';
-        div.style.padding = '10px 12px';
-        sug.appendChild(div);
-      }
-    }, 500);
+  // 回车触发搜索
+  locI.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      searchPOI(this.value);
+    }
   });
 </script>
 </body>
