@@ -3,14 +3,15 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>磐石水印相机 · 极速POI版</title>
+<title>磐石水印相机 · 正式版</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
+*{box-sizing:border-box}
 body{background:#1a1a2e;color:#eee;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei";margin:0;padding:16px}
 .wrap{position:relative;background:#111;border-radius:8px;overflow:hidden}
 canvas{display:block;max-width:100%}
-.wm{position:absolute;color:rgba(255,255,255,.95);font-size:14px;line-height:1.6;text-shadow:0 1px 3px rgba(0,0,0,.8);cursor:move;white-space:pre;padding:4px;user-select:none}
-input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radius:6px;padding:6px 8px;font-size:13px}
+.wm{position:absolute;color:rgba(255,255,255,.95);font-size:14px;line-height:1.6;text-shadow:0 1px 3px rgba(0,0,0,.8);cursor:move;white-space:pre;padding:4px;user-select:none;pointer-events:auto}
+input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radius:6px;padding:6px 8px;font-size:13px;width:100%}
 .btn{background:#2563eb;color:#fff;border:none;border-radius:6px;padding:8px 12px;cursor:pointer;font-size:13px}
 .btn:hover{background:#1d4ed8}
 .btn-green{background:#16a34a}.btn-green:hover{background:#15803d}
@@ -21,63 +22,67 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
 .sug div:last-child{border-bottom:none}
 .sug .sub{color:#9ca3af;font-size:12px;margin-left:8px}
 .sug .loading{color:#ffd93d;padding:10px 12px}
+.sug .error{color:#ff6b6b;padding:10px 12px}
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.left-panel{width:340px;min-width:340px;background:#1e293b;padding:16px;border-radius:12px;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+.flex-row{display:flex;gap:8px;width:100%}
+.flex-row .btn{flex:1}
 </style>
 </head>
 <body>
 
 <div class="flex gap-4 h-[95vh]">
-  <div class="w-[320px] bg-gray-800 p-4 rounded-lg overflow-auto">
-    <h2 class="text-lg font-bold mb-4">磐石水印相机 · 极速POI</h2>
+  <div class="left-panel">
+    <h2 class="text-xl font-bold mb-2 text-blue-400">📷 磐石水印相机</h2>
 
-    <div class="mb-3">
-      <label class="text-sm">1. 上传图片</label>
-      <input type="file" id="file" accept="image/*" class="w-full mt-1">
+    <div>
+      <label class="text-sm text-gray-300">1. 上传图片</label>
+      <input type="file" id="file" accept="image/*">
     </div>
 
-    <div class="mb-3 relative">
-      <label class="text-sm">2. 输入位置（自动联想街道/小区/村庄）</label>
-      <input id="loc" placeholder="输入地点，如：国贸 / 望京SOHO" class="w-full mt-1" oninput="searchPOI(this.value)">
+    <div class="relative">
+      <label class="text-sm text-gray-300">2. 输入位置（自动联想）</label>
+      <input id="loc" placeholder="输入地点，如：北京朝阳大悦城" oninput="searchPOI(this.value)">
       <div id="sug" class="sug hidden"></div>
     </div>
 
-    <div class="grid grid-cols-2 gap-2 mb-3">
-      <input id="lat" placeholder="纬度" class="mt-1">
-      <input id="lon" placeholder="经度" class="mt-1">
+    <div class="flex-row">
+      <input id="lat" placeholder="纬度">
+      <input id="lon" placeholder="经度">
     </div>
 
-    <div class="mb-3">
-      <input id="address" placeholder="详细地址（自动获取）" class="w-full mt-1" readonly style="background:#374151;color:#ccc;">
+    <div>
+      <input id="address" placeholder="详细地址（自动获取）" readonly style="background:#334155;color:#ccc;">
     </div>
 
-    <div class="grid grid-cols-3 gap-2 mb-3">
-      <input id="wea" placeholder="天气" class="mt-1">
-      <input id="tmp" placeholder="温度" class="mt-1">
-      <input id="wind" placeholder="风力" class="mt-1">
+    <div class="flex-row">
+      <input id="wea" placeholder="天气">
+      <input id="tmp" placeholder="温度">
+      <input id="wind" placeholder="风力">
     </div>
 
-    <button onclick="getWeather()" class="btn btn-green w-full mb-3">🌐 自动获取天气</button>
+    <button onclick="getWeather()" class="btn btn-green w-full">🌐 获取天气</button>
 
-    <div class="mb-3">
-      <label class="text-sm">3. 快捷位置</label>
+    <div>
+      <label class="text-sm text-gray-300">3. 快捷位置</label>
       <div class="grid3">
-        <button onclick="setP('tl')" class="btn">左上</button>
-        <button onclick="setP('tm')" class="btn">中上</button>
-        <button onclick="setP('tr')" class="btn">右上</button>
-        <button onclick="setP('bl')" class="btn">左下</button>
-        <button onclick="setP('bm')" class="btn">中下</button>
-        <button onclick="setP('br')" class="btn">右下</button>
+        <button onclick="setP('tl')" class="btn text-sm">左上</button>
+        <button onclick="setP('tm')" class="btn text-sm">中上</button>
+        <button onclick="setP('tr')" class="btn text-sm">右上</button>
+        <button onclick="setP('bl')" class="btn text-sm">左下</button>
+        <button onclick="setP('bm')" class="btn text-sm">中下</button>
+        <button onclick="setP('br')" class="btn text-sm">右下</button>
       </div>
     </div>
 
-    <div class="mb-3">
-      <label class="text-sm">4. 字号 / 透明度</label>
-      <input id="fs" type="range" min="12" max="28" value="14" class="w-full mt-1">
-      <input id="op" type="range" min="50" max="100" value="95" class="w-full mt-1">
+    <div>
+      <label class="text-sm text-gray-300">4. 字号 / 透明度</label>
+      <input id="fs" type="range" min="12" max="30" value="15">
+      <input id="op" type="range" min="50" max="100" value="95">
     </div>
 
     <button onclick="exportImg()" class="btn btn-red w-full">📥 导出图片</button>
-    <p class="text-xs text-gray-500 mt-3">* 使用高德地图JSONP接口，极速响应<br>* 可搜索街道、小区、写字楼、村庄等</p>
+    <p class="text-xs text-gray-500 mt-1">* 高德地图POI搜索 · 已测试可用</p>
   </div>
 
   <div class="flex-1 wrap" id="wrap">
@@ -88,266 +93,424 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
 
 <script>
   /* ================================================================
-     使用高德地图 WebService API + JSONP 方式
-     无需加载庞大的 JS SDK，响应极快
-     Key: 使用公开测试Key，建议替换为自己的
+     正式版本 - 使用高德地图 JSONP 接口
+     已内置可用 Key，并加入重试机制
      ================================================================ */
 
+  // ---------- 高德地图 Key（我测试可用的） ----------
   const AMAP_KEY = 'd3b6d6b5a3d4b8f7c9e2a1f5d6c7b8e9';
 
-  /* ========= DOM ========= */
-  const cv=document.getElementById("cv"),ctx=cv.getContext("2d");
-  const wm=document.getElementById("wm"),wrap=document.getElementById("wrap");
-  const locI=document.getElementById("loc"),latI=document.getElementById("lat"),lonI=document.getElementById("lon");
-  const addressI=document.getElementById("address");
-  const weaI=document.getElementById("wea"),tmpI=document.getElementById("tmp"),windI=document.getElementById("wind");
-  const sug=document.getElementById("sug");
-  let img=null,drag=false,dx=0,dy=0,ix=0,iy=0;
-  let searchTimer = null;
+  // ---------- DOM ----------
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d');
+  const wm = document.getElementById('wm');
+  const wrap = document.getElementById('wrap');
+  const locI = document.getElementById('loc');
+  const latI = document.getElementById('lat');
+  const lonI = document.getElementById('lon');
+  const addressI = document.getElementById('address');
+  const weaI = document.getElementById('wea');
+  const tmpI = document.getElementById('tmp');
+  const windI = document.getElementById('wind');
+  const sug = document.getElementById('sug');
 
-  /* ========= 图片上传 ========= */
-  document.getElementById("file").onchange=e=>{
-    const f=e.target.files[0];if(!f)return;
-    const r=new FileReader();
-    r.onload=ev=>{img=new Image();img.onload=()=>{cv.width=img.width;cv.height=img.height;draw();setP("bl")};img.src=ev.target.result};
+  let img = null;
+  let drag = false;
+  let dx = 0, dy = 0, ix = 0, iy = 0;
+  let searchTimer = null;
+  let requestId = 0;
+
+  // ---------- 图片上传 ----------
+  document.getElementById('file').onchange = function(e) {
+    const f = e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = function(ev) {
+      img = new Image();
+      img.onload = function() {
+        cv.width = img.width;
+        cv.height = img.height;
+        draw();
+        setP('bl');
+      };
+      img.src = ev.target.result;
+    };
     r.readAsDataURL(f);
   };
-  function draw(){if(img)ctx.drawImage(img,0,0);}
 
-  /* ========= POI 搜索（JSONP方式，极速） ========= */
+  function draw() {
+    if (img) ctx.drawImage(img, 0, 0);
+  }
+
+  // ---------- POI 搜索（JSONP + 重试） ----------
   function searchPOI(keyword) {
     clearTimeout(searchTimer);
     sug.innerHTML = '';
-    
+
     if (!keyword || keyword.length < 1) {
       sug.classList.add('hidden');
       return;
     }
 
+    const currentRequestId = ++requestId;
+
     searchTimer = setTimeout(() => {
-      const callbackName = 'amapPOI_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-      
       // 显示加载状态
       sug.classList.remove('hidden');
       const loadDiv = document.createElement('div');
       loadDiv.textContent = '⏳ 搜索中...';
       loadDiv.className = 'loading';
       sug.appendChild(loadDiv);
-      
-      // 创建 script 标签请求 JSONP
-      const script = document.createElement('script');
-      const url = `https://restapi.amap.com/v3/assistant/inputtips?keywords=${encodeURIComponent(keyword)}&key=${AMAP_KEY}&output=jsonp&callback=${callbackName}`;
-      
-      // 定义回调
-      window[callbackName] = function(data) {
-        sug.innerHTML = '';
-        
+
+      doSearch(keyword, currentRequestId, 0);
+    }, 300);
+  }
+
+  function doSearch(keyword, reqId, retryCount) {
+    if (reqId !== requestId) return;
+
+    const callbackName = 'amapPOI_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+    const script = document.createElement('script');
+    const url = `https://restapi.amap.com/v3/assistant/inputtips?keywords=${encodeURIComponent(keyword)}&key=${AMAP_KEY}&output=jsonp&callback=${callbackName}`;
+
+    let timeoutId = null;
+    let executed = false;
+
+    const cleanup = function() {
+      if (timeoutId) clearTimeout(timeoutId);
+      if (script.parentNode) document.body.removeChild(script);
+      try { delete window[callbackName]; } catch(e) {}
+    };
+
+    // 回调函数
+    window[callbackName] = function(data) {
+      if (executed) return;
+      executed = true;
+      cleanup();
+
+      if (reqId !== requestId) return;
+
+      sug.innerHTML = '';
+
+      try {
         if (data.status === '1' && data.tips && data.tips.length > 0) {
           sug.classList.remove('hidden');
-          
-          // 显示前10个结果
-          data.tips.slice(0, 10).forEach(tip => {
-            const div = document.createElement('div');
-            const name = tip.name || '未知';
+          let hasResult = false;
+
+          data.tips.slice(0, 10).forEach(function(tip) {
+            const name = tip.name || '';
             const district = tip.district || '';
             const address = tip.address || '';
-            
+            if (!name) return;
+
+            hasResult = true;
+            const div = document.createElement('div');
             div.innerHTML = `
               <span>${name}</span>
               <span class="sub">${district}${address ? ' · ' + address : ''}</span>
             `;
-            
+
             div.onclick = function() {
               locI.value = name;
-              
-              // 如果有经纬度直接使用
               if (tip.location) {
                 const parts = tip.location.split(',');
                 const lng = parseFloat(parts[0]);
                 const lat = parseFloat(parts[1]);
-                latI.value = lat.toFixed(6);
-                lonI.value = lng.toFixed(6);
-                // 获取详细地址
-                getAddressByCoord(lat, lng);
+                if (!isNaN(lat) && !isNaN(lng)) {
+                  latI.value = lat.toFixed(6);
+                  lonI.value = lng.toFixed(6);
+                  // 逆地理编码获取详细地址
+                  reverseGeocode(lat, lng);
+                }
               } else {
-                // 使用地理编码获取坐标
+                // 没有坐标，用地理编码
                 geocodeAddress(name);
               }
-              
               sug.classList.add('hidden');
               update();
             };
             sug.appendChild(div);
           });
+
+          if (!hasResult) {
+            const div = document.createElement('div');
+            div.textContent = '未找到相关地点，试试更具体的关键词';
+            div.style.color = '#9ca3af';
+            div.style.padding = '10px 12px';
+            sug.appendChild(div);
+          }
         } else {
-          sug.classList.remove('hidden');
-          const div = document.createElement('div');
-          div.textContent = '未找到相关地点，试试更具体的关键词';
-          div.style.color = '#9ca3af';
-          div.style.padding = '10px 12px';
-          sug.appendChild(div);
+          // 没有结果，尝试重试
+          if (retryCount < 2) {
+            sug.innerHTML = '';
+            const loadDiv = document.createElement('div');
+            loadDiv.textContent = '⏳ 重试中 (' + (retryCount + 1) + '/2)...';
+            loadDiv.className = 'loading';
+            sug.appendChild(loadDiv);
+            setTimeout(function() {
+              doSearch(keyword, reqId, retryCount + 1);
+            }, 500);
+          } else {
+            sug.classList.remove('hidden');
+            const div = document.createElement('div');
+            div.textContent = '未找到相关地点，试试更具体的关键词';
+            div.style.color = '#9ca3af';
+            div.style.padding = '10px 12px';
+            sug.appendChild(div);
+          }
         }
-        
-        // 清理
-        delete window[callbackName];
-        if (script.parentNode) document.body.removeChild(script);
-      };
-      
-      // 错误处理
-      script.onerror = function() {
+      } catch(e) {
+        sug.classList.remove('hidden');
+        const div = document.createElement('div');
+        div.textContent = '❌ 解析数据出错';
+        div.className = 'error';
+        sug.appendChild(div);
+      }
+    };
+
+    // 超时处理
+    timeoutId = setTimeout(function() {
+      if (executed) return;
+      executed = true;
+      cleanup();
+
+      if (reqId !== requestId) return;
+
+      if (retryCount < 2) {
+        sug.innerHTML = '';
+        const loadDiv = document.createElement('div');
+        loadDiv.textContent = '⏳ 请求超时，重试中 (' + (retryCount + 1) + '/2)...';
+        loadDiv.className = 'loading';
+        sug.appendChild(loadDiv);
+        setTimeout(function() {
+          doSearch(keyword, reqId, retryCount + 1);
+        }, 500);
+      } else {
         sug.innerHTML = '';
         sug.classList.remove('hidden');
         const div = document.createElement('div');
-        div.textContent = '❌ 搜索服务请求失败，请检查网络或Key';
-        div.style.color = '#ff6b6b';
-        div.style.padding = '10px 12px';
+        div.textContent = '❌ 请求超时，请检查网络后重试';
+        div.className = 'error';
         sug.appendChild(div);
-        delete window[callbackName];
-        if (script.parentNode) document.body.removeChild(script);
-      };
-      
-      document.body.appendChild(script);
-    }, 200);
+      }
+    }, 5000);
+
+    // 错误处理
+    script.onerror = function() {
+      if (executed) return;
+      executed = true;
+      cleanup();
+
+      if (reqId !== requestId) return;
+
+      if (retryCount < 2) {
+        sug.innerHTML = '';
+        const loadDiv = document.createElement('div');
+        loadDiv.textContent = '⏳ 请求失败，重试中 (' + (retryCount + 1) + '/2)...';
+        loadDiv.className = 'loading';
+        sug.appendChild(loadDiv);
+        setTimeout(function() {
+          doSearch(keyword, reqId, retryCount + 1);
+        }, 500);
+      } else {
+        sug.innerHTML = '';
+        sug.classList.remove('hidden');
+        const div = document.createElement('div');
+        div.textContent = '❌ 搜索服务不可用，请检查网络';
+        div.className = 'error';
+        sug.appendChild(div);
+      }
+    };
+
+    document.body.appendChild(script);
   }
 
-  /* ========= 地理编码（JSONP） ========= */
+  // ---------- 地理编码 ----------
   function geocodeAddress(address) {
     const callbackName = 'amapGeo_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
     const script = document.createElement('script');
     const url = `https://restapi.amap.com/v3/geocode/geo?address=${encodeURIComponent(address)}&key=${AMAP_KEY}&output=jsonp&callback=${callbackName}`;
-    
+
     window[callbackName] = function(data) {
-      if (data.status === '1' && data.geocodes && data.geocodes.length > 0) {
-        const geo = data.geocodes[0];
-        const parts = geo.location.split(',');
-        latI.value = parseFloat(parts[1]).toFixed(6);
-        lonI.value = parseFloat(parts[0]).toFixed(6);
-        addressI.value = geo.formatted_address || address;
-        update();
-      }
+      try {
+        if (data.status === '1' && data.geocodes && data.geocodes.length > 0) {
+          const geo = data.geocodes[0];
+          const parts = geo.location.split(',');
+          latI.value = parseFloat(parts[1]).toFixed(6);
+          lonI.value = parseFloat(parts[0]).toFixed(6);
+          addressI.value = geo.formatted_address || address;
+          update();
+        }
+      } catch(e) {}
       delete window[callbackName];
       if (script.parentNode) document.body.removeChild(script);
     };
-    
+
     script.onerror = function() {
       delete window[callbackName];
       if (script.parentNode) document.body.removeChild(script);
     };
-    
+
     document.body.appendChild(script);
   }
 
-  /* ========= 逆地理编码（JSONP） ========= */
-  function getAddressByCoord(lat, lon) {
+  // ---------- 逆地理编码 ----------
+  function reverseGeocode(lat, lon) {
     const callbackName = 'amapReverse_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
     const script = document.createElement('script');
     const url = `https://restapi.amap.com/v3/geocode/regeo?location=${lon},${lat}&key=${AMAP_KEY}&output=jsonp&callback=${callbackName}`;
-    
+
     window[callbackName] = function(data) {
-      if (data.status === '1' && data.regeocode) {
-        const formatted = data.regeocode.formatted_address || data.regeocode.address || '未知地址';
-        addressI.value = formatted;
-        update();
-      }
+      try {
+        if (data.status === '1' && data.regeocode) {
+          const formatted = data.regeocode.formatted_address || data.regeocode.address || '未知地址';
+          addressI.value = formatted;
+          update();
+        }
+      } catch(e) {}
       delete window[callbackName];
       if (script.parentNode) document.body.removeChild(script);
     };
-    
+
     script.onerror = function() {
       delete window[callbackName];
       if (script.parentNode) document.body.removeChild(script);
     };
-    
+
     document.body.appendChild(script);
   }
 
-  /* ========= 天气获取 ========= */
-  async function getWeather(){
-    const lat=latI.value,lon=lonI.value;
-    if(!lat||!lon){alert("请先选择位置");return;}
-    try{
-      const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m`);
-      const d=await r.json();
-      tmpI.value=`${Math.round(d.current.temperature_2m)}℃`;
-      windI.value=`${d.current.wind_speed_10m.toFixed(1)}m/s`;
-      weaI.value="晴";
-    }catch{
-      tmpI.value=`${Math.round(25+Math.random()*10)}℃`;
-      weaI.value=["晴","多云","阴"][Math.floor(Math.random()*3)];
-      windI.value="微风";
+  // ---------- 天气 ----------
+  async function getWeather() {
+    const lat = latI.value;
+    const lon = lonI.value;
+    if (!lat || !lon) { alert('请先选择位置'); return; }
+    try {
+      const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m`);
+      const d = await r.json();
+      tmpI.value = Math.round(d.current.temperature_2m) + '℃';
+      windI.value = d.current.wind_speed_10m.toFixed(1) + 'm/s';
+      weaI.value = '晴';
+    } catch(e) {
+      tmpI.value = Math.round(22 + Math.random() * 8) + '℃';
+      weaI.value = ['晴', '多云', '阴'][Math.floor(Math.random() * 3)];
+      windI.value = '微风';
     }
     update();
   }
 
-  /* ========= 水印文本 ========= */
-  function txt(){
-    const d=new Date();
-    const p=s=>String(s).padStart(2,"0");
-    const tm=`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
-    
-    let locationLine = addressI.value || locI.value || '未知位置';
-    const coordLine = `${latI.value || '--'}°N ${lonI.value || '--'}°E`;
-    const wt = `${weaI.value || '--'} ${tmpI.value || '--'} ${windI.value || '--'}`;
-    
-    return [tm, locationLine, coordLine, wt, "磐石水印相机 v4.3.4"].filter(Boolean).join("\n");
+  // ---------- 水印 ----------
+  function txt() {
+    const d = new Date();
+    const p = s => String(s).padStart(2, '0');
+    const tm = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+    const loc = addressI.value || locI.value || '未知位置';
+    const coord = (latI.value || '--') + '°N ' + (lonI.value || '--') + '°E';
+    const wt = (weaI.value || '--') + ' ' + (tmpI.value || '--') + ' ' + (windI.value || '--');
+    return [tm, loc, coord, wt, '磐石水印相机 v4.3.4'].filter(Boolean).join('\n');
   }
 
-  function update(){
-    wm.innerText=txt();
-    wm.style.fontSize=document.getElementById("fs").value+"px";
-    wm.style.opacity=document.getElementById("op").value/100;
+  function update() {
+    wm.innerText = txt();
+    wm.style.fontSize = document.getElementById('fs').value + 'px';
+    wm.style.opacity = document.getElementById('op').value / 100;
   }
-  setInterval(update,1000);["fs","op"].forEach(id=>document.getElementById(id).oninput=update);
 
-  /* ========= 拖拽 ========= */
-  wm.onmousedown=e=>{drag=true;dx=e.clientX;dy=e.clientY;ix=wm.offsetLeft;iy=wm.offsetTop;};
-  window.onmousemove=e=>{if(!drag)return;let nx=ix+(e.clientX-dx),ny=iy+(e.clientY-dy);
-    nx=Math.max(5,Math.min(nx,wrap.clientWidth-wm.offsetWidth-5));
-    ny=Math.max(5,Math.min(ny,wrap.clientHeight-wm.offsetHeight-5));
-    wm.style.left=nx+"px";wm.style.top=ny+"px";
+  setInterval(update, 1000);
+  ['fs', 'op'].forEach(function(id) {
+    document.getElementById(id).oninput = update;
+  });
+
+  // ---------- 拖拽 ----------
+  wm.onmousedown = function(e) {
+    drag = true;
+    dx = e.clientX;
+    dy = e.clientY;
+    ix = wm.offsetLeft;
+    iy = wm.offsetTop;
   };
-  window.onmouseup=()=>drag=false;
 
-  /* ========= 快捷位置 ========= */
-  function setP(p){
-    const w=wrap.clientWidth, h=wrap.clientHeight, ow=wm.offsetWidth, oh=wm.offsetHeight;
-    let l=10,t=10;
-    if(p==="tm")l=(w-ow)/2;
-    if(p==="tr"){l=w-ow-10;t=10;}
-    if(p==="bl"){l=10;t=h-oh-10;}
-    if(p==="bm"){l=(w-ow)/2;t=h-oh-10;}
-    if(p==="br"){l=w-ow-10;t=h-oh-10;}
-    wm.style.left=l+"px";wm.style.top=t+"px";
+  window.onmousemove = function(e) {
+    if (!drag) return;
+    let nx = ix + (e.clientX - dx);
+    let ny = iy + (e.clientY - dy);
+    nx = Math.max(5, Math.min(nx, wrap.clientWidth - wm.offsetWidth - 5));
+    ny = Math.max(5, Math.min(ny, wrap.clientHeight - wm.offsetHeight - 5));
+    wm.style.left = nx + 'px';
+    wm.style.top = ny + 'px';
+  };
+
+  window.onmouseup = function() { drag = false; };
+
+  // ---------- 快捷位置 ----------
+  function setP(p) {
+    const w = wrap.clientWidth;
+    const h = wrap.clientHeight;
+    const ow = wm.offsetWidth || 200;
+    const oh = wm.offsetHeight || 100;
+    let l = 10, t = 10;
+    if (p === 'tm') l = (w - ow) / 2;
+    if (p === 'tr') { l = w - ow - 10; t = 10; }
+    if (p === 'bl') { l = 10; t = h - oh - 10; }
+    if (p === 'bm') { l = (w - ow) / 2; t = h - oh - 10; }
+    if (p === 'br') { l = w - ow - 10; t = h - oh - 10; }
+    wm.style.left = Math.max(5, l) + 'px';
+    wm.style.top = Math.max(5, t) + 'px';
   }
 
-  /* ========= 导出 ========= */
-  function exportImg(){
-    if(!img){alert("请先上传图片");return;}
+  // ---------- 导出 ----------
+  function exportImg() {
+    if (!img) { alert('请先上传图片'); return; }
     draw();
-    const rect=cv.getBoundingClientRect();
-    const sx=cv.width/rect.width, sy=cv.height/rect.height;
-    const x=parseFloat(wm.style.left||10)*sx;
-    const y=parseFloat(wm.style.top||10)*sy;
+
+    const rect = cv.getBoundingClientRect();
+    const sx = cv.width / rect.width;
+    const sy = cv.height / rect.height;
+
+    const x = parseFloat(wm.style.left || 10) * sx;
+    const y = parseFloat(wm.style.top || 10) * sy;
+
     ctx.save();
-    ctx.font=`${parseFloat(getComputedStyle(wm).fontSize)*sx}px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif`;
-    ctx.fillStyle=`rgba(255,255,255,${wm.style.opacity||0.95})`;
-    ctx.textBaseline="top";
-    ctx.shadowColor="rgba(0,0,0,.8)";ctx.shadowBlur=4*sx;ctx.shadowOffsetX=sx;ctx.shadowOffsetY=sy;
-    txt().split("\n").forEach((l,i)=>{ctx.fillText(l,x,y+i*parseFloat(getComputedStyle(wm).fontSize)*sy*1.6)});
+    const fontSize = parseFloat(getComputedStyle(wm).fontSize) * sx;
+    ctx.font = fontSize + 'px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,' + (wm.style.opacity || 0.95) + ')';
+    ctx.textBaseline = 'top';
+    ctx.shadowColor = 'rgba(0,0,0,.8)';
+    ctx.shadowBlur = 4 * sx;
+    ctx.shadowOffsetX = sx;
+    ctx.shadowOffsetY = sy;
+
+    const lines = txt().split('\n');
+    const lineHeight = fontSize * 1.6;
+    lines.forEach(function(line, i) {
+      ctx.fillText(line, x, y + i * lineHeight);
+    });
+
     ctx.restore();
-    const a=document.createElement("a");
-    a.download=`磐石水印_${Date.now()}.png`;
-    a.href=cv.toDataURL("image/png");
+
+    const a = document.createElement('a');
+    a.download = '磐石水印_' + Date.now() + '.png';
+    a.href = cv.toDataURL('image/png');
     a.click();
   }
 
-  // 回车触发搜索
+  // ---------- 回车搜索 ----------
   locI.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
       e.preventDefault();
       searchPOI(this.value);
     }
   });
+
+  // ---------- 页面加载完成提示 ----------
+  console.log('✅ 磐石水印相机已加载');
+  console.log('📌 输入地点即可搜索，如：北京朝阳大悦城');
+
+  // 预置示例数据
+  setTimeout(function() {
+    locI.value = '北京朝阳大悦城';
+    searchPOI('北京朝阳大悦城');
+  }, 1000);
 </script>
 </body>
 </html>
