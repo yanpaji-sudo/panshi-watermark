@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 
-<title>磐石水印相机 v7.0</title>
+<title>磐石水印相机 v8.0</title>
+
 
 <style>
 
@@ -12,34 +15,48 @@
 box-sizing:border-box;
 }
 
+
 body{
+
 margin:0;
 padding:12px;
+
 background:#111827;
-color:#fff;
+
+color:white;
+
 font-family:
 -apple-system,
 BlinkMacSystemFont,
 "Microsoft YaHei",
 Arial;
+
 }
+
 
 
 .app{
 
 display:flex;
+
 gap:12px;
+
 height:96vh;
 
 }
 
 
+
 .panel{
 
-width:330px;
+width:340px;
+
 background:#1f2937;
+
 border-radius:12px;
+
 padding:15px;
+
 overflow:auto;
 
 }
@@ -49,12 +66,19 @@ overflow:auto;
 .preview{
 
 flex:1;
+
 background:#000;
+
 border-radius:12px;
+
 position:relative;
+
 overflow:hidden;
+
 display:flex;
+
 align-items:center;
+
 justify-content:center;
 
 }
@@ -64,6 +88,7 @@ justify-content:center;
 canvas{
 
 max-width:100%;
+
 max-height:100%;
 
 }
@@ -73,7 +98,9 @@ max-height:100%;
 .title{
 
 font-size:20px;
+
 font-weight:bold;
+
 margin-bottom:15px;
 
 }
@@ -84,14 +111,18 @@ input,
 button{
 
 width:100%;
+
 margin-top:8px;
+
 padding:10px;
 
 border-radius:8px;
+
 border:1px solid #374151;
 
 background:#111827;
-color:white;
+
+color:#fff;
 
 font-size:14px;
 
@@ -102,14 +133,8 @@ font-size:14px;
 button{
 
 background:#2563eb;
+
 cursor:pointer;
-
-}
-
-
-button:hover{
-
-background:#1d4ed8;
 
 }
 
@@ -134,6 +159,7 @@ background:#dc2626;
 .row{
 
 display:flex;
+
 gap:8px;
 
 }
@@ -159,17 +185,20 @@ position:relative;
 .list{
 
 position:absolute;
-top:100%;
+
 left:0;
+
 right:0;
 
+top:100%;
+
 background:#111827;
+
+z-index:99;
 
 border-radius:8px;
 
 overflow:hidden;
-
-z-index:99;
 
 }
 
@@ -183,8 +212,6 @@ border-bottom:1px solid #374151;
 
 cursor:pointer;
 
-font-size:14px;
-
 }
 
 
@@ -194,6 +221,22 @@ font-size:14px;
 background:#374151;
 
 }
+
+
+
+
+label{
+
+display:block;
+
+font-size:13px;
+
+margin-top:12px;
+
+color:#d1d5db;
+
+}
+
 
 
 
@@ -207,27 +250,38 @@ left:25px;
 
 bottom:25px;
 
-color:rgba(255,255,255,.9);
+
+color:white;
+
 
 font-family:
+
 "Microsoft YaHei",
 Arial;
 
+
 font-weight:500;
 
-line-height:1.2;
+
+line-height:1.15;
+
 
 letter-spacing:.3px;
 
+
 white-space:pre-line;
+
 
 text-shadow:
 
-0 2px 5px rgba(0,0,0,.9);
+0 2px 5px rgba(0,0,0,.85);
+
 
 cursor:move;
 
+
 max-width:90%;
+
 
 }
 
@@ -238,55 +292,74 @@ max-width:90%;
 </head>
 
 
+
 <body>
 
 
 <div class="app">
 
 
+
 <div class="panel">
 
 
+
 <div class="title">
-磐石水印相机 v7.0
+
+磐石水印相机 v8.0
+
 </div>
 
 
 
+
 <input
-id="file"
 type="file"
+id="file"
 accept="image/*"
 capture="environment">
 
 
 
+
+
 <div class="search">
+
 
 <input
 id="address"
-placeholder="输入中国地点">
+placeholder="输入中国地点，例如：北京大红门">
+
 
 <div
 id="list"
 class="list">
-</div>
 
 </div>
+
+
+</div>
+
+
 
 
 
 <div class="row">
 
+
 <input
 id="lat"
 placeholder="纬度">
+
 
 <input
 id="lon"
 placeholder="经度">
 
+
 </div>
+
+
 
 
 
@@ -300,9 +373,12 @@ class="green">
 
 
 
+
 <input
 id="weather"
 placeholder="天气">
+
+
 
 
 <input
@@ -310,12 +386,74 @@ id="temp"
 placeholder="温度">
 
 
+
+
+
 <button
 id="getWeather">
 
-☀ 自动获取天气
+☀ 获取天气
 
 </button>
+
+
+
+
+
+<hr>
+
+
+
+
+
+<label>
+
+水印大小
+
+</label>
+
+
+<input
+id="waterSize"
+type="range"
+min="12"
+max="60"
+value="24">
+
+
+
+
+
+<label>
+
+水印透明度
+
+</label>
+
+
+<input
+id="waterOpacity"
+type="range"
+min="20"
+max="100"
+value="90">
+
+
+
+
+
+<label>
+
+底部文字（可为空）
+
+</label>
+
+
+<input
+id="brand"
+placeholder="例如：磐石课堂">
+
+
 
 
 
@@ -339,7 +477,10 @@ class="red">
 <div class="preview">
 
 
-<canvas id="canvas"></canvas>
+<canvas
+id="canvas">
+
+</canvas>
 
 
 
@@ -352,6 +493,8 @@ class="watermark">
 
 
 </div>
+
+
 
 
 </div>
@@ -394,11 +537,25 @@ document.getElementById("watermark");
 
 
 
+const waterSize=
+document.getElementById("waterSize");
+
+
+const waterOpacity=
+document.getElementById("waterOpacity");
+
+
+const brand=
+document.getElementById("brand");
+
+
+
 let img=null;
 
 
 
 // 上传图片
+
 
 file.onchange=function(e){
 
@@ -410,8 +567,7 @@ if(!f)return;
 
 
 
-let reader=
-new FileReader();
+let reader=new FileReader();
 
 
 
@@ -425,12 +581,10 @@ img=new Image();
 img.onload=function(){
 
 
-canvas.width=
-img.width;
+canvas.width=img.width;
 
 
-canvas.height=
-img.height;
+canvas.height=img.height;
 
 
 draw();
@@ -443,8 +597,7 @@ updateWatermark();
 
 
 
-img.src=
-ev.target.result;
+img.src=ev.target.result;
 
 
 };
@@ -486,14 +639,14 @@ img,
 // ===============================
 
 
-let timer=null;
+let searchTimer=null;
 
 
 
 address.oninput=function(){
 
 
-clearTimeout(timer);
+clearTimeout(searchTimer);
 
 
 
@@ -511,7 +664,7 @@ return;
 
 
 
-timer=setTimeout(async()=>{
+searchTimer=setTimeout(async()=>{
 
 
 try{
@@ -519,7 +672,7 @@ try{
 
 let url=
 
-"https://nominatim.openstreetmap.org/search?format=json&accept-language=zh-CN&countrycodes=cn&limit=10&q="
+"https://nominatim.openstreetmap.org/search?format=json&accept-language=zh-CN&countrycodes=cn&limit=8&q="
 +
 encodeURIComponent(key);
 
@@ -549,9 +702,9 @@ document.createElement("div");
 
 
 let name=
+formatAddress(
 item.display_name
-.replace(/, China/g,"")
-.replace(/, 中国/g,"");
+);
 
 
 
@@ -562,9 +715,7 @@ div.innerText=name;
 div.onclick=function(){
 
 
-
-address.value=
-formatAddress(name);
+address.value=name;
 
 
 
@@ -601,7 +752,10 @@ list.appendChild(div);
 }catch(e){
 
 
-console.log(e);
+console.log(
+"地址搜索失败",
+e
+);
 
 
 }
@@ -619,14 +773,21 @@ console.log(e);
 
 
 
-// 地址格式优化
+
+// 地址格式化
 
 function formatAddress(str){
 
 
+if(!str)return "";
+
+
 
 let arr=
-str.split(",");
+str
+.replace(/, China/g,"")
+.replace(/, 中国/g,"")
+.split(",");
 
 
 
@@ -634,24 +795,20 @@ let result=[];
 
 
 
-arr.forEach(x=>{
+arr.forEach(v=>{
 
 
-x=x.trim();
-
+let t=v.trim();
 
 
 if(
-x &&
-!result.includes(x)
+t &&
+!result.includes(t)
 ){
 
-
-result.push(x);
-
+result.push(t);
 
 }
-
 
 
 });
@@ -671,7 +828,6 @@ return result
 
 
 
-
 // ===============================
 // GPS定位
 // ===============================
@@ -682,6 +838,20 @@ document.getElementById("gps")
 
 
 
+if(!navigator.geolocation){
+
+
+alert(
+"浏览器不支持定位"
+);
+
+
+return;
+
+}
+
+
+
 navigator.geolocation.getCurrentPosition(
 
 async function(pos){
@@ -689,6 +859,7 @@ async function(pos){
 
 lat.value=
 pos.coords.latitude.toFixed(6);
+
 
 
 lon.value=
@@ -730,6 +901,7 @@ data.display_name
 );
 
 
+
 }
 
 
@@ -756,11 +928,14 @@ alert(
 }
 
 
+
 );
 
 
 
 };
+
+
 
 
 
@@ -811,7 +986,7 @@ await res.json();
 
 
 
-let temp=
+let t=
 Math.round(
 data.current.temperature_2m
 );
@@ -819,7 +994,8 @@ data.current.temperature_2m
 
 
 let wind=
-data.current.wind_speed_10m;
+data.current.wind_speed_10m
+.toFixed(1);
 
 
 
@@ -831,7 +1007,7 @@ document.getElementById("weather")
 
 document.getElementById("temp")
 .value=
-temp+"℃";
+t+"℃";
 
 
 
@@ -859,8 +1035,9 @@ document.getElementById("weather")
 
 
 
+
 // ===============================
-// 真实水印排版
+// 水印生成
 // ===============================
 
 
@@ -895,56 +1072,36 @@ String(d.getMinutes()).padStart(2,"0");
 
 
 
-let size=18;
-
-
-
-if(canvas.width){
-
-
-size=
-canvas.width/65;
-
-
-
-size=
-Math.max(
-16,
-Math.min(
-42,
-size
-)
-);
-
-
-}
-
-
-
-watermark.style.fontSize=
-size+"px";
-
 
 
 let locationText=
-address.value||
+address.value ||
 "";
 
 
-let weather=
-document.getElementById("weather").value
-||"☀ 晴";
+
+let weatherText=
+
+document.getElementById("weather")
+.value
+||
+"";
 
 
 
-let temperature=
-document.getElementById("temp").value
-||"";
+let tempText=
+
+document.getElementById("temp")
+.value
+||
+"";
 
 
 
 
-watermark.innerText=
+
+let content=
+
 
 time
 
@@ -972,17 +1129,54 @@ lon.value
 "\n"
 
 +
-weather
+weatherText
 +
 " "
 +
-temperature
+tempText;
 
-+
+
+
+
+
+let brandText=
+brand.value.trim();
+
+
+
+if(brandText){
+
+
+content+=
 "\n"
-
 +
-"磐石水印相机";
+brandText;
+
+
+}
+
+
+
+watermark.innerText=
+content;
+
+
+
+
+// 大小控制
+
+
+watermark.style.fontSize=
+waterSize.value+"px";
+
+
+
+
+//透明度控制
+
+
+watermark.style.opacity=
+waterOpacity.value/100;
 
 
 
@@ -991,10 +1185,32 @@ temperature
 
 
 
+
+//实时刷新
+
+
 setInterval(
 updateWatermark,
 1000
-);// ===============================
+);
+
+
+
+
+//滑块监听
+
+
+waterSize.oninput=
+updateWatermark;
+
+
+waterOpacity.oninput=
+updateWatermark;
+
+
+brand.oninput=
+updateWatermark;
+  // ===============================
 // 水印拖动（电脑+手机）
 // ===============================
 
@@ -1002,14 +1218,16 @@ updateWatermark,
 let dragging=false;
 
 let startX=0;
+
 let startY=0;
 
 let wmX=25;
+
 let wmY=25;
 
 
 
-function getPoint(e){
+function point(e){
 
 return e.touches?
 e.touches[0]:
@@ -1019,40 +1237,10 @@ e;
 
 
 
-watermark.addEventListener(
-"mousedown",
-function(e){
+function dragStart(e){
 
 
-let p=getPoint(e);
-
-
-dragging=true;
-
-
-startX=
-p.clientX-wmX;
-
-
-startY=
-p.clientY-wmY;
-
-
-watermark.style.bottom="auto";
-
-
-}
-
-);
-
-
-
-watermark.addEventListener(
-"touchstart",
-function(e){
-
-
-let p=getPoint(e);
+let p=point(e);
 
 
 dragging=true;
@@ -1066,79 +1254,21 @@ startY=
 p.clientY-wmY;
 
 
+
 watermark.style.bottom="auto";
 
 
-},
-{
-passive:true
 }
 
-);
 
 
-
-
-
-document.addEventListener(
-"mousemove",
-function(e){
+function dragMove(e){
 
 
 if(!dragging)return;
 
 
-
-wmX=
-e.clientX-startX;
-
-
-wmY=
-e.clientY-startY;
-
-
-
-wmX=Math.max(
-0,
-wmX
-);
-
-
-wmY=Math.max(
-0,
-wmY
-);
-
-
-
-watermark.style.left=
-wmX+"px";
-
-
-watermark.style.top=
-wmY+"px";
-
-
-
-}
-
-);
-
-
-
-
-
-document.addEventListener(
-"touchmove",
-function(e){
-
-
-if(!dragging)return;
-
-
-
-let p=
-getPoint(e);
+let p=point(e);
 
 
 
@@ -1173,23 +1303,53 @@ wmY+"px";
 
 
 
-},
-{
-passive:true
 }
 
+
+
+function dragEnd(){
+
+dragging=false;
+
+}
+
+
+
+watermark.addEventListener(
+"mousedown",
+dragStart
+);
+
+
+document.addEventListener(
+"mousemove",
+dragMove
+);
+
+
+document.addEventListener(
+"mouseup",
+dragEnd
 );
 
 
 
 
+watermark.addEventListener(
+"touchstart",
+dragStart,
+{
+passive:true
+}
+);
+
+
 
 document.addEventListener(
-"mouseup",
-function(){
-
-dragging=false;
-
+"touchmove",
+dragMove,
+{
+passive:true
 }
 );
 
@@ -1197,12 +1357,10 @@ dragging=false;
 
 document.addEventListener(
 "touchend",
-function(){
-
-dragging=false;
-
-}
+dragEnd
 );
+
+
 
 
 
@@ -1234,7 +1392,7 @@ return;
 
 
 
-//重新绘制图片
+// 重绘图片
 
 
 ctx.clearRect(
@@ -1254,12 +1412,14 @@ img,
 
 
 
-//真实比例
+
+//显示尺寸比例
 
 
 let scaleX=
 canvas.width/
 canvas.clientWidth;
+
 
 
 let scaleY=
@@ -1273,28 +1433,23 @@ watermark.offsetLeft*
 scaleX;
 
 
+
 let y=
 watermark.offsetTop*
 scaleY;
 
 
 
-//根据原图自动字体
+
+
+
+// 根据原图自动字体
 
 
 let fontSize=
-canvas.width/65;
-
-
-
-fontSize=Math.max(
-24,
-Math.min(
-70,
-fontSize
-)
-);
-
+Number(waterSize.value)
+*
+scaleX;
 
 
 
@@ -1302,18 +1457,22 @@ ctx.save();
 
 
 
+
 ctx.font=
+
 `500 ${fontSize}px Microsoft YaHei`;
 
 
 
 ctx.fillStyle=
-"rgba(255,255,255,0.90)";
+
+`rgba(255,255,255,${waterOpacity.value/100})`;
 
 
 
 ctx.shadowColor=
-"rgba(0,0,0,0.85)";
+
+"rgba(0,0,0,.85)";
 
 
 
@@ -1327,26 +1486,26 @@ ctx.textBaseline=
 
 
 
+
 let lines=
 watermark.innerText.split("\n");
 
 
 
 let lineHeight=
-fontSize*1.25;
+fontSize*1.2;
 
 
 
 lines.forEach(
-(line,index)=>{
+(line,i)=>{
 
 
 ctx.fillText(
 line,
 x,
-y+index*lineHeight
+y+i*lineHeight
 );
-
 
 
 }
@@ -1362,15 +1521,16 @@ ctx.restore();
 
 
 
-//下载
+// 下载图片
 
 
-let link=
+let a=
 document.createElement("a");
 
 
 
-link.download=
+a.download=
+
 "磐石水印_"
 +
 Date.now()
@@ -1379,7 +1539,7 @@ Date.now()
 
 
 
-link.href=
+a.href=
 canvas.toDataURL(
 "image/png",
 1
@@ -1387,7 +1547,7 @@ canvas.toDataURL(
 
 
 
-link.click();
+a.click();
 
 
 
@@ -1397,9 +1557,14 @@ link.click();
 
 
 
+
+// ===============================
 // 初始化
+// ===============================
+
 
 updateWatermark();
+
 
 
 </script>
@@ -1408,5 +1573,4 @@ updateWatermark();
 </body>
 
 </html>
-
 
