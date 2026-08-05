@@ -1,338 +1,336 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>磐石水印相机</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<script src="https://cdn.tailwindcss.com"></script>
+<title>磐石水印相机 v5.0</title>
 
 <style>
-body{
-background:#1a1a2e;
-color:#eee;
-font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei";
-margin:0;
-padding:16px
+
+*{
+box-sizing:border-box;
 }
 
-.wrap{
-position:relative;
-background:#111;
-border-radius:8px;
-overflow:hidden
+body{
+margin:0;
+padding:15px;
+background:#111827;
+color:#fff;
+font-family:
+-apple-system,
+BlinkMacSystemFont,
+"Microsoft YaHei",
+Arial;
 }
+
+
+.app{
+display:flex;
+gap:15px;
+height:95vh;
+}
+
+
+.panel{
+width:330px;
+background:#1f2937;
+border-radius:12px;
+padding:15px;
+overflow:auto;
+}
+
+
+.preview{
+flex:1;
+background:#000;
+border-radius:12px;
+position:relative;
+overflow:hidden;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
 
 canvas{
-display:block;
-max-width:100%
+max-width:100%;
+max-height:100%;
 }
 
-.wm{
-position:absolute;
-color:rgba(255,255,255,.95);
-font-size:14px;
-line-height:1.6;
-text-shadow:0 1px 3px rgba(0,0,0,.8);
-cursor:move;
-white-space:pre;
-padding:4px;
-user-select:none
-}
 
-input,select{
-background:#1f2937;
+input,button{
+width:100%;
+margin-top:8px;
+padding:10px;
+border-radius:8px;
 border:1px solid #374151;
-color:#eee;
-border-radius:6px;
-padding:6px 8px;
-font-size:13px
+background:#111827;
+color:white;
 }
 
-.btn{
+
+button{
 background:#2563eb;
-color:#fff;
-border:none;
-border-radius:6px;
-padding:8px 12px;
 cursor:pointer;
-font-size:13px
 }
 
-.btn:hover{
-background:#1d4ed8
+
+button:hover{
+background:#1d4ed8;
 }
 
-.btn-green{
-background:#16a34a
+
+.green{
+background:#16a34a;
 }
 
-.btn-green:hover{
-background:#15803d
+
+.red{
+background:#dc2626;
 }
 
-.btn-red{
-background:#dc2626
+
+.title{
+font-size:20px;
+font-weight:bold;
+margin-bottom:15px;
 }
 
-.btn-red:hover{
-background:#b91c1c
-}
 
-.sug{
-background:#1f2937;
-border:1px solid #374151;
-border-radius:6px;
-max-height:160px;
-overflow-y:auto;
+.watermark{
 position:absolute;
-z-index:10;
-width:calc(100% - 16px)
+left:20px;
+bottom:20px;
+color:white;
+font-size:16px;
+line-height:1.6;
+text-shadow:
+0 2px 4px #000;
+white-space:pre-line;
+cursor:move;
 }
 
-.sug div{
-padding:8px;
+
+.search-box{
+position:relative;
+}
+
+
+.result{
+position:absolute;
+top:100%;
+left:0;
+right:0;
+background:#111827;
+z-index:99;
+border-radius:8px;
+overflow:hidden;
+}
+
+
+.result div{
+padding:10px;
+border-bottom:1px solid #374151;
 cursor:pointer;
-font-size:13px
 }
 
-.sug div:hover{
-background:#374151
+
+.result div:hover{
+background:#374151;
 }
 
-.grid3{
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:6px;
-margin-top:8px
+
+.row{
+display:flex;
+gap:8px;
 }
+
+
+.row input{
+width:50%;
+}
+
 
 </style>
+
 </head>
 
 
 <body>
 
 
-<div class="flex gap-4 h-[95vh]">
+<div class="app">
 
 
-<!-- 左侧面板 -->
-
-<div class="w-[320px] bg-gray-800 p-4 rounded-lg overflow-auto">
+<div class="panel">
 
 
-<h2 class="text-lg font-bold mb-4">
-磐石水印相机
-</h2>
+<div class="title">
+磐石水印相机 v5.0
+</div>
 
 
 
-<div class="mb-3">
+<input 
+type="file"
+id="file"
+accept="image/*"
+capture="environment">
 
-<label class="text-sm">
-1. 上传图片
-</label>
 
-<input type="file" id="file" accept="image/*" class="w-full mt-1">
+
+<div class="search-box">
+
+
+<input
+id="address"
+placeholder="输入地点，例如：北京、曼谷、巴黎">
+
+
+<div id="result"
+class="result">
+</div>
+
 
 </div>
 
 
 
-<div class="mb-3 relative">
-
-<label class="text-sm">
-2. 地点（输入自动联想）
-</label>
-
-<input id="loc" placeholder="输入城市或地址，例如：上海 / 曼谷 / 巴黎铁塔" class="w-full mt-1">
-
-
-<div id="sug" class="sug hidden"></div>
-
-</div>
-
-
-
-
-<div class="grid grid-cols-2 gap-2 mb-3">
-
-<input id="lat" placeholder="纬度" class="mt-1">
-
-<input id="lon" placeholder="经度" class="mt-1">
-
-</div>
-
-
-
-
-<div class="grid grid-cols-3 gap-2 mb-3">
-
-<input id="wea" placeholder="天气">
-
-<input id="tmp" placeholder="温度">
-
-<input id="wind" placeholder="风力">
-
-</div>
-
-
-
-<button onclick="getWeather()" class="btn btn-green w-full mb-3">
-🌐 自动获取天气
+<button id="gps" class="green">
+📍 获取当前位置
 </button>
 
 
 
+<div class="row">
 
-<div class="mb-3">
-
-<label class="text-sm">
-3. 快捷位置
-</label>
+<input id="lat"
+placeholder="纬度">
 
 
-<div class="grid3">
-
-<button onclick="setP('tl')" class="btn">左上</button>
-
-<button onclick="setP('tm')" class="btn">中上</button>
-
-<button onclick="setP('tr')" class="btn">右上</button>
-
-
-<button onclick="setP('bl')" class="btn">左下</button>
-
-<button onclick="setP('bm')" class="btn">中下</button>
-
-<button onclick="setP('br')" class="btn">右下</button>
-
-
-</div>
+<input id="lon"
+placeholder="经度">
 
 </div>
 
 
 
 
-<div class="mb-3">
-
-<label class="text-sm">
-4. 字号 / 透明度
-</label>
+<input id="weather"
+placeholder="天气">
 
 
-<input id="fs" type="range" min="12" max="28" value="14" class="w-full mt-1">
-
-
-<input id="op" type="range" min="50" max="100" value="95" class="w-full mt-1">
-
-
-</div>
+<input id="temp"
+placeholder="温度">
 
 
 
-<button onclick="exportImg()" class="btn btn-red w-full">
+<button id="getWeather">
+🌤 获取天气
+</button>
+
+
+
+<button id="export"
+class="red">
 📥 导出图片
 </button>
 
 
-
-<p class="text-xs text-gray-500 mt-3">
-* 全球地址自动搜索<br>
-* 天气联网获取<br>
-* 拖拽水印可调整位置
-</p>
-
-
-
 </div>
 
 
 
 
 
-<!-- 右侧 -->
+<div class="preview"
+id="preview">
 
-<div class="flex-1 wrap" id="wrap">
 
-<canvas id="cv"></canvas>
+<canvas id="canvas"></canvas>
 
-<div id="wm" class="wm"></div>
+
+<div
+id="watermark"
+class="watermark">
+</div>
+
 
 </div>
 
 
-
 </div>
-
-
 
 
 
 <script>
 
 
-const cv=document.getElementById("cv");
-const ctx=cv.getContext("2d");
+const file =
+document.getElementById("file");
 
 
-const wm=document.getElementById("wm");
-const wrap=document.getElementById("wrap");
+const canvas =
+document.getElementById("canvas");
 
 
-const locI=document.getElementById("loc");
-const latI=document.getElementById("lat");
-const lonI=document.getElementById("lon");
+const ctx =
+canvas.getContext("2d");
 
 
-const weaI=document.getElementById("wea");
-const tmpI=document.getElementById("tmp");
-const windI=document.getElementById("wind");
+const watermark =
+document.getElementById("watermark");
 
 
-const sug=document.getElementById("sug");
+const address =
+document.getElementById("address");
+
+
+const lat =
+document.getElementById("lat");
+
+
+const lon =
+document.getElementById("lon");
+
+
+const result =
+document.getElementById("result");
+
 
 
 let img=null;
 
-let drag=false;
-
-let dx=0,dy=0;
-
-let ix=0,iy=0;
 
 
+// 图片上传
 
-document.getElementById("file").onchange=e=>{
+file.onchange=function(e){
 
-
-const f=e.target.files[0];
+let f=e.target.files[0];
 
 if(!f)return;
 
 
-const r=new FileReader();
+let reader=new FileReader();
 
 
-r.onload=ev=>{
+reader.onload=function(ev){
 
 
 img=new Image();
 
 
-img.onload=()=>{
+img.onload=function(){
 
 
-cv.width=img.width;
+canvas.width=img.width;
 
-cv.height=img.height;
+canvas.height=img.height;
 
 
 draw();
-
-setP("bl");
 
 
 };
@@ -344,49 +342,55 @@ img.src=ev.target.result;
 };
 
 
-r.readAsDataURL(f);
+reader.readAsDataURL(f);
 
 
 };
 
 
 
+
 function draw(){
 
-if(img){
 
-ctx.drawImage(img,0,0);
+if(!img)return;
+
+
+ctx.clearRect(
+0,
+0,
+canvas.width,
+canvas.height
+);
+
+
+ctx.drawImage(
+img,
+0,
+0
+);
+
 
 }
-
-}
-
-
-
-
-
-
-/* ========= 全球地址自动联想 ========= */
-
+// ===============================
+// 地址自动联想
+// ===============================
 
 let searchTimer=null;
 
 
-locI.oninput=()=>{
-
-
-let key=locI.value.trim();
+address.oninput=function(){
 
 
 clearTimeout(searchTimer);
 
 
+let keyword=this.value.trim();
 
-if(!key){
 
-sug.innerHTML="";
+if(!keyword){
 
-sug.classList.add("hidden");
+result.innerHTML="";
 
 return;
 
@@ -401,71 +405,81 @@ try{
 
 
 let url=
-"https://nominatim.openstreetmap.org/search?format=json&accept-language=zh&q="
-+encodeURIComponent(key)
-+"&limit=8";
+"https://photon.komoot.io/api/?limit=8&q="
++
+encodeURIComponent(keyword);
 
 
 
-let res=await fetch(url);
+let res=
+await fetch(url);
 
 
 
-let data=await res.json();
+let data=
+await res.json();
 
 
 
-sug.innerHTML="";
+result.innerHTML="";
 
 
 
-if(!data.length){
-
-sug.classList.add("hidden");
-
-return;
-
-}
+data.features.forEach(item=>{
 
 
-
-sug.classList.remove("hidden");
-
+let p=item.properties;
 
 
-data.forEach(item=>{
-
-
-let div=document.createElement("div");
-
-
-div.innerText=item.display_name;
+let name=
+[
+p.name,
+p.city,
+p.state,
+p.country
+]
+.filter(Boolean)
+.join(" ");
 
 
 
-div.onclick=()=>{
+let div=
+document.createElement("div");
 
 
-locI.value=item.display_name;
+div.innerText=name;
 
 
-latI.value=parseFloat(item.lat).toFixed(6);
+
+div.onclick=function(){
 
 
-lonI.value=parseFloat(item.lon).toFixed(6);
+address.value=name;
 
 
-sug.classList.add("hidden");
+
+lat.value=
+item.geometry.coordinates[1].toFixed(6);
 
 
-update();
+
+lon.value=
+item.geometry.coordinates[0].toFixed(6);
+
+
+
+result.innerHTML="";
+
+
+
+updateWatermark();
 
 
 };
 
 
 
-sug.appendChild(div);
+result.appendChild(div);
 
 
 
@@ -475,7 +489,9 @@ sug.appendChild(div);
 
 }catch(e){
 
-console.log(e);
+
+console.log("地址搜索失败",e);
+
 
 }
 
@@ -484,27 +500,90 @@ console.log(e);
 },500);
 
 
-
 };
-<script>
-
-
-/* ========= 天气获取 ========= */
-
-async function getWeather(){
-
-
-const lat=latI.value;
-
-const lon=lonI.value;
 
 
 
-if(!lat||!lon){
 
-alert("请先选择或输入地点");
+// ===============================
+// GPS定位
+// ===============================
+
+
+document.getElementById("gps")
+.onclick=function(){
+
+
+if(!navigator.geolocation){
+
+
+alert("当前浏览器不支持定位");
+
 
 return;
+
+}
+
+
+
+navigator.geolocation.getCurrentPosition(
+
+function(pos){
+
+
+lat.value=
+pos.coords.latitude.toFixed(6);
+
+
+
+lon.value=
+pos.coords.longitude.toFixed(6);
+
+
+
+updateWatermark();
+
+
+},
+
+
+function(){
+
+
+alert("定位失败，请允许浏览器定位权限");
+
+
+}
+
+
+);
+
+
+};
+
+
+
+
+
+// ===============================
+// 天气获取
+// ===============================
+
+
+document.getElementById("getWeather")
+.onclick=
+async function(){
+
+
+
+if(!lat.value || !lon.value){
+
+
+alert("请先选择地址或定位");
+
+
+return;
+
 
 }
 
@@ -513,218 +592,190 @@ return;
 try{
 
 
-const r=await fetch(
-`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m`
-);
+let url=
+
+`https://api.open-meteo.com/v1/forecast?latitude=${lat.value}&longitude=${lon.value}&current=temperature_2m,wind_speed_10m`;
 
 
 
-const d=await r.json();
+let res=
+await fetch(url);
 
 
 
-tmpI.value=
-`${Math.round(d.current.temperature_2m)}℃`;
+let data=
+await res.json();
 
 
 
-windI.value=
-`风速${d.current.wind_speed_10m.toFixed(1)}m/s`;
+document.getElementById("temp").value=
+
+Math.round(
+data.current.temperature_2m
+)
++"℃";
 
 
 
-weaI.value="晴";
+document.getElementById("weather").value=
+
+"晴";
+
+
+updateWatermark();
 
 
 
 }catch(e){
 
 
-
-const t=
-30-Math.abs(parseFloat(lat))*0.5+Math.random()*6-3;
-
-
-
-tmpI.value=
-`${Math.round(t)}℃`;
-
-
-
-weaI.value=
-["晴","多云","阴"]
-[Math.floor(Math.random()*3)];
-
-
-
-windI.value="微风";
-
+document.getElementById("weather").value="未知";
 
 
 }
 
-
-
-update();
-
-
-
-}
-
-
-
-
-
-
-
-/* ========= 水印内容 ========= */
-
-
-function txt(){
-
-
-const d=new Date();
-
-
-const p=s=>String(s).padStart(2,"0");
-
-
-
-const tm=
-`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
-
-
-
-const lc=
-`${locI.value} ${latI.value}°N ${lonI.value}°E`;
-
-
-
-const wt=
-`${weaI.value} ${tmpI.value} ${windI.value}`;
-
-
-
-return [
-
-tm,
-
-lc,
-
-wt,
-
-"磐石水印相机 v4.3.4"
-
-]
-.filter(Boolean)
-.join("\n");
-
-
-}
-
-
-
-
-
-
-
-function update(){
-
-
-wm.innerText=txt();
-
-
-
-wm.style.fontSize=
-document.getElementById("fs").value+"px";
-
-
-
-wm.style.opacity=
-document.getElementById("op").value/100;
-
-
-
-}
-
-
-
-
-setInterval(update,1000);
-
-
-
-["fs","op"].forEach(id=>{
-
-document.getElementById(id).oninput=update;
-
-});
-
-
-
-
-
-
-
-
-
-/* ========= 拖动水印 ========= */
-
-
-wm.onmousedown=e=>{
-
-
-drag=true;
-
-
-dx=e.clientX;
-
-dy=e.clientY;
-
-
-ix=wm.offsetLeft;
-
-iy=wm.offsetTop;
 
 
 };
 
 
 
-window.onmousemove=e=>{
 
 
-if(!drag)return;
+// ===============================
+// 水印内容更新
+// ===============================
 
 
-
-let nx=
-ix+(e.clientX-dx);
-
-
-
-let ny=
-iy+(e.clientY-dy);
+function updateWatermark(){
 
 
 
-nx=Math.max(
-5,
-Math.min(nx,wrap.clientWidth-wm.offsetWidth-5)
+let now=
+new Date();
+
+
+
+let time=
+
+now.getFullYear()
++"-"
++
+String(now.getMonth()+1).padStart(2,"0")
++
+"-"
++
+String(now.getDate()).padStart(2,"0")
++
+" "
++
+String(now.getHours()).padStart(2,"0")
++
+":"
++
+String(now.getMinutes()).padStart(2,"0");
+
+
+
+watermark.innerText=
+
+time
+
++"\n\n📍 "
+
++
+address.value
+
++"\n"
+
++
+lat.value
++
+"°N "
++
+lon.value
++
+"°E"
+
++"\n\n"
+
++
+document.getElementById("weather").value
++
+" "
++
+document.getElementById("temp").value
+
++"\n\n磐石水印相机 v5.0";
+
+
+
+}
+
+
+// 定时刷新时间
+
+setInterval(
+updateWatermark,
+1000
 );
+// ===============================
+// 水印拖动
+// ===============================
+
+let dragging=false;
+
+let startX=0;
+let startY=0;
+
+let wmX=20;
+let wmY=20;
+
+
+watermark.onmousedown=function(e){
+
+
+dragging=true;
+
+
+startX=e.clientX-wmX;
+
+startY=e.clientY-wmY;
+
+
+};
 
 
 
-ny=Math.max(
-5,
-Math.min(ny,wrap.clientHeight-wm.offsetHeight-5)
-);
+document.onmousemove=function(e){
+
+
+if(!dragging)return;
+
+
+wmX=e.clientX-startX;
+
+wmY=e.clientY-startY;
 
 
 
-wm.style.left=nx+"px";
+// 限制范围
 
-wm.style.top=ny+"px";
+wmX=Math.max(0,wmX);
+
+wmY=Math.max(0,wmY);
+
+
+
+watermark.style.left=
+wmX+"px";
+
+
+watermark.style.top=
+wmY+"px";
+
+
+watermark.style.bottom="auto";
 
 
 
@@ -732,11 +783,9 @@ wm.style.top=ny+"px";
 
 
 
-window.onmouseup=()=>{
+document.onmouseup=function(){
 
-
-drag=false;
-
+dragging=false;
 
 };
 
@@ -744,138 +793,65 @@ drag=false;
 
 
 
+// ===============================
+// 导出图片
+// ===============================
 
 
-
-
-
-/* ========= 快捷位置 ========= */
-
-
-function setP(p){
-
-
-
-const w=wrap.clientWidth;
-
-const h=wrap.clientHeight;
-
-
-const ow=wm.offsetWidth;
-
-const oh=wm.offsetHeight;
-
-
-
-let l=10;
-
-let t=10;
-
-
-
-if(p==="tm"){
-
-l=(w-ow)/2;
-
-}
-
-
-
-if(p==="tr"){
-
-l=w-ow-10;
-
-t=10;
-
-}
-
-
-
-if(p==="bl"){
-
-l=10;
-
-t=h-oh-10;
-
-}
-
-
-
-if(p==="bm"){
-
-l=(w-ow)/2;
-
-t=h-oh-10;
-
-}
-
-
-
-if(p==="br"){
-
-l=w-ow-10;
-
-t=h-oh-10;
-
-}
-
-
-
-wm.style.left=l+"px";
-
-wm.style.top=t+"px";
-
-
-
-}
-
-
-
-
-
-
-
-
-
-/* ========= 导出图片 ========= */
-
-
-function exportImg(){
-
+document.getElementById("export")
+.onclick=function(){
 
 
 if(!img){
 
+
 alert("请先上传图片");
 
+
 return;
+
 
 }
 
 
 
-draw();
+// 重新绘制原图
+
+ctx.clearRect(
+0,
+0,
+canvas.width,
+canvas.height
+);
+
+
+ctx.drawImage(
+img,
+0,
+0
+);
 
 
 
-const rect=cv.getBoundingClientRect();
+// 比例计算
+
+let scaleX=
+canvas.width /
+canvas.clientWidth;
+
+
+let scaleY=
+canvas.height /
+canvas.clientHeight;
 
 
 
-const sx=cv.width/rect.width;
-
-const sy=cv.height/rect.height;
-
+let x=
+wmX*scaleX;
 
 
-const x=
-parseFloat(wm.style.left||10)*sx;
-
-
-
-const y=
-parseFloat(wm.style.top||10)*sy;
-
+let y=
+wmY*scaleY;
 
 
 
@@ -884,52 +860,37 @@ ctx.save();
 
 
 ctx.font=
-`${parseFloat(getComputedStyle(wm).fontSize)*sx}px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif`;
+"32px Microsoft YaHei";
 
 
 
 ctx.fillStyle=
-`rgba(255,255,255,${wm.style.opacity||0.95})`;
-
-
-
-ctx.textBaseline="top";
+"rgba(255,255,255,0.95)";
 
 
 
 ctx.shadowColor=
-"rgba(0,0,0,.8)";
-
+"black";
 
 
 ctx.shadowBlur=
-4*sx;
+5;
 
 
 
-ctx.shadowOffsetX=sx;
-
-ctx.shadowOffsetY=sy;
-
+let lines=
+watermark.innerText.split("\n");
 
 
 
-const size=
-parseFloat(getComputedStyle(wm).fontSize)*sy*1.6;
-
-
-
-txt()
-.split("\n")
-.forEach((line,i)=>{
+lines.forEach((line,i)=>{
 
 
 ctx.fillText(
 line,
 x,
-y+i*size
+y+i*45
 );
-
 
 
 });
@@ -940,25 +901,35 @@ ctx.restore();
 
 
 
+// 下载
 
-const a=document.createElement("a");
+let a=
+document.createElement("a");
 
 
 a.download=
-`磐石水印_${Date.now()}.png`;
-
+"磐石水印_"+Date.now()+".png";
 
 
 a.href=
-cv.toDataURL("image/png");
-
+canvas.toDataURL(
+"image/png"
+);
 
 
 a.click();
 
 
 
-}
+};
+
+
+
+
+// 初始化
+
+updateWatermark();
+
 
 
 </script>
@@ -967,3 +938,7 @@ a.click();
 </body>
 
 </html>
+
+
+
+
