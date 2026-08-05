@@ -1,9 +1,10 @@
+html
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>磐石水印相机 · 高德地图版</title>
+<title>磐石水印相机 · 全能定位版</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
 body{background:#1a1a2e;color:#eee;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei";margin:0;padding:16px}
@@ -24,18 +25,23 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
 
 <div class="flex gap-4 h-[95vh]">
   <div class="w-[320px] bg-gray-800 p-4 rounded-lg overflow-auto">
-    <h2 class="text-lg font-bold mb-4">磐石水印相机 · 高德地图版</h2>
+    <h2 class="text-lg font-bold mb-4">磐石水印相机 · 全能定位</h2>
 
     <div class="mb-3">
       <label class="text-sm">1. 上传图片</label>
       <input type="file" id="file" accept="image/*" class="w-full mt-1">
     </div>
 
-    <div class="mb-3 relative">
-      <label class="text-sm">2. 输入位置（高德地图自动补全）</label>
-      <input id="loc" placeholder="输入地点，自动获取详细地址" class="w-full mt-1">
+    <div class="mb-3">
+      <label class="text-sm">2. 输入位置（支持中文/拼音）</label>
+      <div class="flex gap-2">
+        <input id="loc" placeholder="如：北京 / 上海" class="flex-1 mt-1">
+        <button onclick="searchLocation()" class="btn mt-1">🔍</button>
+      </div>
       <div id="sug" class="sug hidden"></div>
     </div>
+
+    <button onclick="getCurrentLocation()" class="btn btn-green w-full mb-2">📍 获取当前位置</button>
 
     <div class="grid grid-cols-2 gap-2 mb-3">
       <input id="lat" placeholder="纬度" class="mt-1">
@@ -73,7 +79,7 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
     </div>
 
     <button onclick="exportImg()" class="btn btn-red w-full">📥 导出图片</button>
-    <p class="text-xs text-gray-500 mt-3">* 使用高德地图API，地址格式与腾讯水印相机风格一致</p>
+    <p class="text-xs text-gray-500 mt-3">* 使用多种免费地理服务，无需API Key</p>
   </div>
 
   <div class="flex-1 wrap" id="wrap">
@@ -83,12 +89,6 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
 </div>
 
 <script>
-  /* ================================================================
-     使用高德地图 API（Web服务 + JSONP 方式，无需后端）
-     申请 Key：https://lbs.amap.com/ → 控制台 → 应用管理
-     ================================================================ */
-  const AMAP_KEY = 'd3b6d6b5a3d4b8f7c9e2a1f5d6c7b8e9';  // 公开测试Key，建议替换为自己的
-
   /* ========= DOM ========= */
   const cv=document.getElementById("cv"),ctx=cv.getContext("2d");
   const wm=document.getElementById("wm"),wrap=document.getElementById("wrap");
@@ -107,126 +107,112 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
   };
   function draw(){if(img)ctx.drawImage(img,0,0);}
 
-  /* ========= 高德地图地点搜索（JSONP） ========= */
-  function searchPlace(keyword) {
-    const callbackName = 'amapSearch_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-    const script = document.createElement('script');
-    const url = `https://restapi.amap.com/v3/assistant/inputtips?keywords=${encodeURIComponent(keyword)}&key=${AMAP_KEY}&output=jsonp&callback=${callbackName}`;
+  /* ========= 方法1：使用免费API获取位置（Nominatim + OpenStreetMap） ========= */
+  async function searchLocation() {
+    const keyword = locI.value.trim();
+    if(!keyword) { alert('请输入位置名称'); return; }
     
-    window[callbackName] = function(data) {
-      sug.innerHTML = '';
-      if(data.status !== '1' || !data.tips || data.tips.length === 0) {
-        sug.classList.add('hidden');
-        delete window[callbackName];
-        document.body.removeChild(script);
+    sug.innerHTML = '';
+    try {
+      // 使用Nominatim搜索（免费，无需Key）
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(keyword)}&format=json&limit=5&addressdetails=1`;
+      const response = await fetch(url, {
+        headers: { 'User-Agent': '磐石水印相机/1.0' }
+      });
+      const data = await response.json();
+      
+      if(!data || data.length === 0) {
+        sug.classList.remove('hidden');
+        const div = document.createElement('div');
+        div.textContent = '未找到该地点，请尝试其他关键词';
+        div.style.color = '#ff6b6b';
+        sug.appendChild(div);
         return;
       }
-      
+
       sug.classList.remove('hidden');
-      // 显示前5个建议
-      data.tips.slice(0, 5).forEach(item => {
+      data.forEach(item => {
         const div = document.createElement('div');
-        div.textContent = item.name + (item.district ? ' · ' + item.district : '');
+        const displayName = item.display_name.split(',')[0] + ' · ' + item.address?.city || item.address?.town || item.address?.county || '';
+        div.textContent = displayName || item.display_name;
         div.onclick = () => {
-          locI.value = item.name;
-          // 如果有经纬度直接使用，否则通过逆地理编码获取
-          if(item.location) {
-            const [lng, lat] = item.location.split(',');
-            latI.value = lat;
-            lonI.value = lng;
-            reverseGeocode(lat, lng);
-          } else {
-            // 如果没有经纬度，使用关键词搜索获取
-            geocodeSearch(item.name);
-          }
+          locI.value = item.display_name.split(',')[0];
+          latI.value = item.lat;
+          lonI.value = item.lon;
+          // 构造详细地址
+          const addr = item.display_name;
+          addressI.value = addr;
           sug.classList.add('hidden');
           update();
         };
         sug.appendChild(div);
       });
-      
-      delete window[callbackName];
-      document.body.removeChild(script);
-    };
-    
-    script.src = url;
-    script.onerror = function() {
-      delete window[callbackName];
-      document.body.removeChild(script);
-      sug.classList.add('hidden');
-      console.warn('地点搜索失败，请检查网络或Key');
-    };
-    document.body.appendChild(script);
+    } catch(e) {
+      sug.classList.remove('hidden');
+      const div = document.createElement('div');
+      div.textContent = '❌ 网络请求失败，请重试';
+      div.style.color = '#ff6b6b';
+      sug.appendChild(div);
+      console.error('搜索失败:', e);
+    }
   }
 
-  /* ========= 地理编码（地名→经纬度） ========= */
-  function geocodeSearch(address) {
-    const callbackName = 'amapGeocode_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-    const script = document.createElement('script');
-    const url = `https://restapi.amap.com/v3/geocode/geo?address=${encodeURIComponent(address)}&key=${AMAP_KEY}&output=jsonp&callback=${callbackName}`;
-    
-    window[callbackName] = function(data) {
-      if(data.status === '1' && data.geocodes && data.geocodes.length > 0) {
-        const loc = data.geocodes[0];
-        const [lng, lat] = loc.location.split(',');
-        latI.value = lat;
-        lonI.value = lng;
-        reverseGeocode(lat, lng);
-      }
-      delete window[callbackName];
-      document.body.removeChild(script);
-    };
-    
-    script.src = url;
-    script.onerror = function() {
-      delete window[callbackName];
-      document.body.removeChild(script);
-    };
-    document.body.appendChild(script);
-  }
+  // 支持回车搜索
+  locI.addEventListener('keypress', (e) => {
+    if(e.key === 'Enter') searchLocation();
+  });
 
-  /* ========= 逆地理编码（经纬度→详细地址） ========= */
-  function reverseGeocode(lat, lon) {
-    const callbackName = 'amapReverse_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-    const script = document.createElement('script');
-    const url = `https://restapi.amap.com/v3/geocode/regeo?location=${lon},${lat}&key=${AMAP_KEY}&output=jsonp&callback=${callbackName}`;
+  /* ========= 方法2：获取当前位置（浏览器Geolocation） ========= */
+  function getCurrentLocation() {
+    if (!navigator.geolocation) {
+      alert('您的浏览器不支持定位功能');
+      return;
+    }
     
-    window[callbackName] = function(data) {
-      if(data.status === '1' && data.regeocode) {
-        const formatted = data.regeocode.formatted_address || data.regeocode.address || '未知地址';
-        addressI.value = formatted;
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        latI.value = lat.toFixed(6);
+        lonI.value = lon.toFixed(6);
+        
+        // 逆地理编码获取地址
+        await reverseGeocode(lat, lon);
         update();
-      }
-      delete window[callbackName];
-      document.body.removeChild(script);
-    };
-    
-    script.src = url;
-    script.onerror = function() {
-      delete window[callbackName];
-      document.body.removeChild(script);
-      console.warn('逆地理编码失败');
-    };
-    document.body.appendChild(script);
+      },
+      (error) => {
+        alert('定位失败：' + error.message + '\n请手动输入位置');
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   }
 
-  /* ========= 输入框事件（防抖） ========= */
-  let searchTimer = null;
-  locI.oninput = () => {
-    clearTimeout(searchTimer);
-    const keyword = locI.value.trim();
-    sug.innerHTML = '';
-    if(!keyword || keyword.length < 2) { sug.classList.add('hidden'); return; }
-    
-    searchTimer = setTimeout(() => {
-      searchPlace(keyword);
-    }, 300);
-  };
+  /* ========= 逆地理编码（使用Nominatim） ========= */
+  async function reverseGeocode(lat, lon) {
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`;
+      const response = await fetch(url, {
+        headers: { 'User-Agent': '磐石水印相机/1.0' }
+      });
+      const data = await response.json();
+      
+      if(data && data.display_name) {
+        addressI.value = data.display_name;
+        // 提取城市名作为地点
+        const city = data.address?.city || data.address?.town || data.address?.county || data.address?.state || '未知';
+        locI.value = city;
+      }
+    } catch(e) {
+      console.error('逆地理编码失败:', e);
+      // 使用默认地址
+      addressI.value = `纬度 ${lat}, 经度 ${lon}`;
+    }
+  }
 
   /* ========= 天气获取 ========= */
   async function getWeather(){
     const lat=latI.value,lon=lonI.value;
-    if(!lat||!lon){alert("请先选择或输入地点");return;}
+    if(!lat||!lon){alert("请先选择或输入地点，或点击「获取当前位置」");return;}
     try{
       const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m`);
       const d=await r.json();
@@ -242,17 +228,13 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
     update();
   }
 
-  /* ========= 水印文本（腾讯风格） ========= */
+  /* ========= 水印文本 ========= */
   function txt(){
     const d=new Date();
     const p=s=>String(s).padStart(2,"0");
     const tm=`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
     
-    let locationLine = addressI.value || locI.value;
-    if(!locationLine && latI.value && lonI.value) {
-      locationLine = `${latI.value}°N ${lonI.value}°E`;
-    }
-
+    let locationLine = addressI.value || locI.value || '未知位置';
     const coordLine = `${latI.value || '--'}°N ${lonI.value || '--'}°E`;
     const wt = `${weaI.value || '--'} ${tmpI.value || '--'} ${windI.value || '--'}`;
     
@@ -307,6 +289,26 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
     a.href=cv.toDataURL("image/png");
     a.click();
   }
+
+  // 页面加载时自动尝试定位
+  window.addEventListener('load', () => {
+    // 延迟一下，等页面完全加载
+    setTimeout(() => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            latI.value = lat.toFixed(6);
+            lonI.value = lon.toFixed(6);
+            await reverseGeocode(lat, lon);
+            update();
+          },
+          () => { /* 静默失败，让用户手动输入 */ }
+        );
+      }
+    }, 500);
+  });
 </script>
 </body>
 </html>
