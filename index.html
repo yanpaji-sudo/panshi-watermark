@@ -4,6 +4,10 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>磐石水印相机</title>
+
+<!-- 高德地图 JS API（关键） -->
+<script src="https://webapi.amap.com/maps?v=2.0&key=YOUR_AMAP_KEY"></script>
+
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
 body{background:#1a1a2e;color:#eee;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei";margin:0;padding:16px}
@@ -15,7 +19,7 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
 .btn:hover{background:#1d4ed8}
 .btn-green{background:#16a34a}.btn-green:hover{background:#15803d}
 .btn-red{background:#dc2626}.btn-red:hover{background:#b91c1c}
-.sug{background:#1f2937;border:1px solid #374151;border-radius:6px;max-height:160px;overflow-y:auto;position:absolute;z-index:10;width:calc(100% - 16px)}
+.sug{background:#1f2937;border:1px solid #374151;border-radius:6px;max-height:180px;overflow-y:auto;position:absolute;z-index:10;width:calc(100% - 16px)}
 .sug div{padding:8px;cursor:pointer;font-size:13px}.sug div:hover{background:#374151}
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
 </style>
@@ -34,7 +38,7 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
 
 <div class="mb-3 relative">
 <label class="text-sm">2. 地点（输入自动联想）</label>
-<input id="loc" placeholder="如：大连 / 泰国达府" class="w-full mt-1">
+<input id="loc" placeholder="如：大红门 / 达府 / 外滩" class="w-full mt-1">
 <div id="sug" class="sug hidden"></div>
 </div>
 
@@ -70,7 +74,7 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
 </div>
 
 <button onclick="exportImg()" class="btn btn-red w-full">📥 导出图片</button>
-<p class="text-xs text-gray-500 mt-3">* 天气联网获取，断网自动估算<br>* 拖拽水印可微调位置</p>
+<p class="text-xs text-gray-500 mt-3">* 支持全国地点联想（如：大红门）<br>* 断网自动估算天气</p>
 </div>
 
 <!-- 右侧画布 -->
@@ -81,30 +85,80 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
 </div>
 
 <script>
-/* ========= 内置城市库 ========= */
-const cities = [
-  {n:"大连",lat:38.91,lon:121.61},
-  {n:"北京",lat:39.90,lon:116.40},
-  {n:"上海",lat:31.23,lon:121.47},
-  {n:"广州",lat:23.12,lon:113.25},
-  {n:"深圳",lat:22.54,lon:114.05},
-  {n:"泰国达府",lat:16.88,lon:99.13},
-  {n:"曼谷",lat:13.75,lon:100.50},
-  {n:"东京",lat:35.68,lon:139.69},
-  {n:"纽约",lat:40.71,lon:-74.00},
-  {n:"伦敦",lat:51.50,lon:-0.12},
-  {n:"新加坡",lat:1.35,lon:103.82}
-];
+/* ========= 高德地图全国全量 POI 联想 ========= */
+let placeSearch = null;
+AMap.plugin("AMap.PlaceSearch", () => {
+  placeSearch = new AMap.PlaceSearch({ pageSize: 8, extensions: "base" });
+});
 
-/* ========= DOM ========= */
+const locI = document.getElementById("loc");
+const sug  = document.getElementById("sug");
+const latI = document.getElementById("lat");
+const lonI = document.getElementById("lon");
+
+locI.oninput = () => {
+  const k = locI.value.trim();
+  sug.innerHTML = "";
+  if (!k || !placeSearch) { sug.classList.add("hidden"); return; }
+
+  placeSearch.search(k, (status, res) => {
+    if (status !== "complete" || !res.poiList) {
+      sug.classList.add("hidden"); return;
+    }
+    sug.classList.remove("hidden");
+    res.poiList.pois.forEach(p => {
+      const div = document.createElement("div");
+      const addr = [p.pname, p.cityname, p.adname].filter(Boolean).join("");
+      div.textContent = `${p.name}${addr ? " - " + addr : ""}`;
+      div.onclick = () => {
+        locI.value = p.name;
+        latI.value = p.location.getLat().toFixed(4);
+        lonI.value = p.location.getLng().toFixed(4);
+        sug.classList.add("hidden");
+        update();
+      };
+      sug.appendChild(div);
+    });
+  });
+};
+
+document.addEventListener("click", e => {
+  if (e.target !== locI) sug.classList.add("hidden");
+});
+
+/* ========= 天气获取（联网+离线降级） ========= */
+async function getWeather() {
+  const lat = latI.value, lon = lonI.value;
+  if (!lat || !lon) { alert("请先选择地点"); return; }
+  try {
+    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,weather_code`);
+    const d = await r.json();
+    tmpI.value = `${Math.round(d.current.temperature_2m)}℃`;
+    windI.value = `风速${d.current.wind_speed_10m.toFixed(1)}m/s`;
+    weaI.value = code2wea(d.current.weather_code);
+  } catch {
+    const t = 30 - Math.abs(parseFloat(lat)) * 0.5 + Math.random() * 6 - 3;
+    tmpI.value = `${Math.round(t)}℃`;
+    weaI.value = ["晴","多云","阴"][Math.floor(Math.random()*3)];
+    windI.value = "微风";
+  }
+  update();
+}
+
+function code2wea(code) {
+  if (code === 0) return "晴";
+  if (code <= 3) return "多云";
+  if (code <= 48) return "雾";
+  if (code <= 67) return "雨";
+  if (code <= 86) return "雪";
+  return "晴";
+}
+
+/* ========= 原有逻辑（图片/水印/拖拽/导出）完全不变 ========= */
 const cv=document.getElementById("cv"),ctx=cv.getContext("2d");
 const wm=document.getElementById("wm"),wrap=document.getElementById("wrap");
-const locI=document.getElementById("loc"),latI=document.getElementById("lat"),lonI=document.getElementById("lon");
-const weaI=document.getElementById("wea"),tmpI=document.getElementById("tmp"),windI=document.getElementById("wind");
-const sug=document.getElementById("sug");
 let img=null,drag=false,dx=0,dy=0,ix=0,iy=0;
 
-/* ========= 图片上传 ========= */
 document.getElementById("file").onchange=e=>{
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();
@@ -113,35 +167,6 @@ document.getElementById("file").onchange=e=>{
 };
 function draw(){if(img)ctx.drawImage(img,0,0);}
 
-/* ========= 地点联想 ========= */
-locI.oninput=()=>{
-  const k=locI.value.trim();sug.innerHTML="";if(!k){sug.classList.add("hidden");return;}
-  const rs=cities.filter(c=>c.n.includes(k)||c.n.toLowerCase().includes(k.toLowerCase()));
-  if(rs.length){sug.classList.remove("hidden");rs.forEach(c=>{
-    const d=document.createElement("div");d.textContent=c.n;d.onclick=()=>{locI.value=c.n;latI.value=c.lat;lonI.value=c.lon;sug.classList.add("hidden");update()};sug.appendChild(d);
-  });}else sug.classList.add("hidden");
-};
-
-/* ========= 天气获取 ========= */
-async function getWeather(){
-  const lat=latI.value,lon=lonI.value;
-  if(!lat||!lon){alert("请先选择或输入地点");return;}
-  try{
-    const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m`);
-    const d=await r.json();
-    tmpI.value=`${Math.round(d.current.temperature_2m)}℃`;
-    windI.value=`风速${d.current.wind_speed_10m.toFixed(1)}m/s`;
-    weaI.value="晴";
-  }catch{
-    const t=30-Math.abs(parseFloat(lat))*0.5+Math.random()*6-3;
-    tmpI.value=`${Math.round(t)}℃`;
-    weaI.value=["晴","多云","阴"][Math.floor(Math.random()*3)];
-    windI.value="微风";
-  }
-  update();
-}
-
-/* ========= 水印文本 ========= */
 function txt(){
   const d=new Date();
   const p=s=>String(s).padStart(2,"0");
@@ -156,20 +181,21 @@ function update(){
   wm.style.fontSize=document.getElementById("fs").value+"px";
   wm.style.opacity=document.getElementById("op").value/100;
 }
-setInterval(update,1000);["fs","op"].forEach(id=>document.getElementById(id).oninput=update);
+setInterval(update,1000);
+["fs","op"].forEach(id=>document.getElementById(id).oninput=update);
 
-/* ========= 拖拽 ========= */
 wm.onmousedown=e=>{drag=true;dx=e.clientX;dy=e.clientY;ix=wm.offsetLeft;iy=wm.offsetTop;};
-window.onmousemove=e=>{if(!drag)return;let nx=ix+(e.clientX-dx),ny=iy+(e.clientY-dy);
+window.onmousemove=e=>{
+  if(!drag)return;
+  let nx=ix+(e.clientX-dx),ny=iy+(e.clientY-dy);
   nx=Math.max(5,Math.min(nx,wrap.clientWidth-wm.offsetWidth-5));
   ny=Math.max(5,Math.min(ny,wrap.clientHeight-wm.offsetHeight-5));
   wm.style.left=nx+"px";wm.style.top=ny+"px";
 };
 window.onmouseup=()=>drag=false;
 
-/* ========= 快捷位置 ========= */
 function setP(p){
-  const w=wrap.clientWidth, h=wrap.clientHeight, ow=wm.offsetWidth, oh=wm.offsetHeight;
+  const w=wrap.clientWidth,h=wrap.clientHeight,ow=wm.offsetWidth,oh=wm.offsetHeight;
   let l=10,t=10;
   if(p==="tm")l=(w-ow)/2;
   if(p==="tr"){l=w-ow-10;t=10;}
@@ -179,12 +205,11 @@ function setP(p){
   wm.style.left=l+"px";wm.style.top=t+"px";
 }
 
-/* ========= 导出 ========= */
 function exportImg(){
   if(!img){alert("请先上传图片");return;}
   draw();
   const rect=cv.getBoundingClientRect();
-  const sx=cv.width/rect.width, sy=cv.height/rect.height;
+  const sx=cv.width/rect.width,sy=cv.height/rect.height;
   const x=parseFloat(wm.style.left||10)*sx;
   const y=parseFloat(wm.style.top||10)*sy;
   ctx.save();
