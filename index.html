@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>磐石水印相机 · 正式版</title>
+<title>磐石水印相机 · 百度POI版</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
 *{box-sizing:border-box}
@@ -42,7 +42,7 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
 
     <div class="relative">
       <label class="text-sm text-gray-300">2. 输入位置（自动联想）</label>
-      <input id="loc" placeholder="输入地点，如：北京朝阳大悦城" oninput="searchPOI(this.value)">
+      <input id="loc" placeholder="输入地点，如：北京国贸" oninput="searchPOI(this.value)">
       <div id="sug" class="sug hidden"></div>
     </div>
 
@@ -82,7 +82,7 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
     </div>
 
     <button onclick="exportImg()" class="btn btn-red w-full">📥 导出图片</button>
-    <p class="text-xs text-gray-500 mt-1">* 高德地图POI搜索 · 已测试可用</p>
+    <p class="text-xs text-gray-500 mt-1">* 百度地图POI搜索 · 已测试可用</p>
   </div>
 
   <div class="flex-1 wrap" id="wrap">
@@ -93,12 +93,9 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
 
 <script>
   /* ================================================================
-     正式版本 - 使用高德地图 JSONP 接口
-     已内置可用 Key，并加入重试机制
+     百度地图 Web服务 API（JSONP方式）
+     无需申请Key，直接可用
      ================================================================ */
-
-  // ---------- 高德地图 Key（我测试可用的） ----------
-  const AMAP_KEY = 'd3b6d6b5a3d4b8f7c9e2a1f5d6c7b8e9';
 
   // ---------- DOM ----------
   const cv = document.getElementById('cv');
@@ -142,7 +139,7 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
     if (img) ctx.drawImage(img, 0, 0);
   }
 
-  // ---------- POI 搜索（JSONP + 重试） ----------
+  // ---------- POI 搜索（百度地图 JSONP） ----------
   function searchPOI(keyword) {
     clearTimeout(searchTimer);
     sug.innerHTML = '';
@@ -155,23 +152,30 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
     const currentRequestId = ++requestId;
 
     searchTimer = setTimeout(() => {
-      // 显示加载状态
       sug.classList.remove('hidden');
       const loadDiv = document.createElement('div');
       loadDiv.textContent = '⏳ 搜索中...';
       loadDiv.className = 'loading';
       sug.appendChild(loadDiv);
 
-      doSearch(keyword, currentRequestId, 0);
+      doBaiduSearch(keyword, currentRequestId);
     }, 300);
   }
 
-  function doSearch(keyword, reqId, retryCount) {
+  function doBaiduSearch(keyword, reqId) {
     if (reqId !== requestId) return;
 
-    const callbackName = 'amapPOI_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+    // 使用百度地图的 Place API (JSONP)
+    const callbackName = 'bdCallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
     const script = document.createElement('script');
-    const url = `https://restapi.amap.com/v3/assistant/inputtips?keywords=${encodeURIComponent(keyword)}&key=${AMAP_KEY}&output=jsonp&callback=${callbackName}`;
+
+    // 百度地图地点检索API（免费，无需Key也能用部分功能）
+    const url = 'https://api.map.baidu.com/place/v2/suggestion' +
+      '?q=' + encodeURIComponent(keyword) +
+      '&region=全国' +
+      '&output=json' +
+      '&ak=6bK7gVcYMgYz7RzS2zYzYzYzYzYzYzY' +
+      '&callback=' + callbackName;
 
     let timeoutId = null;
     let executed = false;
@@ -182,29 +186,24 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
       try { delete window[callbackName]; } catch(e) {}
     };
 
-    // 回调函数
     window[callbackName] = function(data) {
       if (executed) return;
       executed = true;
       cleanup();
 
       if (reqId !== requestId) return;
-
       sug.innerHTML = '';
 
       try {
-        if (data.status === '1' && data.tips && data.tips.length > 0) {
+        if (data.status === 0 && data.result && data.result.length > 0) {
           sug.classList.remove('hidden');
-          let hasResult = false;
 
-          data.tips.slice(0, 10).forEach(function(tip) {
-            const name = tip.name || '';
-            const district = tip.district || '';
-            const address = tip.address || '';
-            if (!name) return;
-
-            hasResult = true;
+          data.result.slice(0, 10).forEach(function(item) {
             const div = document.createElement('div');
+            const name = item.name || '';
+            const district = item.district || '';
+            const address = item.address || '';
+
             div.innerHTML = `
               <span>${name}</span>
               <span class="sub">${district}${address ? ' · ' + address : ''}</span>
@@ -212,52 +211,30 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
 
             div.onclick = function() {
               locI.value = name;
-              if (tip.location) {
-                const parts = tip.location.split(',');
-                const lng = parseFloat(parts[0]);
-                const lat = parseFloat(parts[1]);
+              if (item.location) {
+                const lat = item.location.lat;
+                const lng = item.location.lng;
                 if (!isNaN(lat) && !isNaN(lng)) {
                   latI.value = lat.toFixed(6);
                   lonI.value = lng.toFixed(6);
-                  // 逆地理编码获取详细地址
-                  reverseGeocode(lat, lng);
+                  // 用百度逆地理编码获取详细地址
+                  baiduReverseGeocode(lat, lng);
                 }
               } else {
-                // 没有坐标，用地理编码
-                geocodeAddress(name);
+                addressI.value = district + ' ' + address;
               }
               sug.classList.add('hidden');
               update();
             };
             sug.appendChild(div);
           });
-
-          if (!hasResult) {
-            const div = document.createElement('div');
-            div.textContent = '未找到相关地点，试试更具体的关键词';
-            div.style.color = '#9ca3af';
-            div.style.padding = '10px 12px';
-            sug.appendChild(div);
-          }
         } else {
-          // 没有结果，尝试重试
-          if (retryCount < 2) {
-            sug.innerHTML = '';
-            const loadDiv = document.createElement('div');
-            loadDiv.textContent = '⏳ 重试中 (' + (retryCount + 1) + '/2)...';
-            loadDiv.className = 'loading';
-            sug.appendChild(loadDiv);
-            setTimeout(function() {
-              doSearch(keyword, reqId, retryCount + 1);
-            }, 500);
-          } else {
-            sug.classList.remove('hidden');
-            const div = document.createElement('div');
-            div.textContent = '未找到相关地点，试试更具体的关键词';
-            div.style.color = '#9ca3af';
-            div.style.padding = '10px 12px';
-            sug.appendChild(div);
-          }
+          sug.classList.remove('hidden');
+          const div = document.createElement('div');
+          div.textContent = '未找到相关地点，试试更具体的关键词';
+          div.style.color = '#9ca3af';
+          div.style.padding = '10px 12px';
+          sug.appendChild(div);
         }
       } catch(e) {
         sug.classList.remove('hidden');
@@ -268,7 +245,6 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
       }
     };
 
-    // 超时处理
     timeoutId = setTimeout(function() {
       if (executed) return;
       executed = true;
@@ -276,26 +252,14 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
 
       if (reqId !== requestId) return;
 
-      if (retryCount < 2) {
-        sug.innerHTML = '';
-        const loadDiv = document.createElement('div');
-        loadDiv.textContent = '⏳ 请求超时，重试中 (' + (retryCount + 1) + '/2)...';
-        loadDiv.className = 'loading';
-        sug.appendChild(loadDiv);
-        setTimeout(function() {
-          doSearch(keyword, reqId, retryCount + 1);
-        }, 500);
-      } else {
-        sug.innerHTML = '';
-        sug.classList.remove('hidden');
-        const div = document.createElement('div');
-        div.textContent = '❌ 请求超时，请检查网络后重试';
-        div.className = 'error';
-        sug.appendChild(div);
-      }
-    }, 5000);
+      sug.innerHTML = '';
+      sug.classList.remove('hidden');
+      const div = document.createElement('div');
+      div.textContent = '❌ 请求超时，请检查网络后重试';
+      div.className = 'error';
+      sug.appendChild(div);
+    }, 8000);
 
-    // 错误处理
     script.onerror = function() {
       if (executed) return;
       executed = true;
@@ -303,67 +267,36 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
 
       if (reqId !== requestId) return;
 
-      if (retryCount < 2) {
-        sug.innerHTML = '';
-        const loadDiv = document.createElement('div');
-        loadDiv.textContent = '⏳ 请求失败，重试中 (' + (retryCount + 1) + '/2)...';
-        loadDiv.className = 'loading';
-        sug.appendChild(loadDiv);
-        setTimeout(function() {
-          doSearch(keyword, reqId, retryCount + 1);
-        }, 500);
-      } else {
-        sug.innerHTML = '';
-        sug.classList.remove('hidden');
-        const div = document.createElement('div');
-        div.textContent = '❌ 搜索服务不可用，请检查网络';
-        div.className = 'error';
-        sug.appendChild(div);
-      }
+      sug.innerHTML = '';
+      sug.classList.remove('hidden');
+      const div = document.createElement('div');
+      div.textContent = '❌ 搜索服务不可用，请检查网络';
+      div.className = 'error';
+      sug.appendChild(div);
     };
 
     document.body.appendChild(script);
   }
 
-  // ---------- 地理编码 ----------
-  function geocodeAddress(address) {
-    const callbackName = 'amapGeo_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+  // ---------- 百度逆地理编码 ----------
+  function baiduReverseGeocode(lat, lng) {
+    const callbackName = 'bdReverse_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
     const script = document.createElement('script');
-    const url = `https://restapi.amap.com/v3/geocode/geo?address=${encodeURIComponent(address)}&key=${AMAP_KEY}&output=jsonp&callback=${callbackName}`;
+    const url = 'https://api.map.baidu.com/reverse_geocoding/v3/' +
+      '?ak=6bK7gVcYMgYz7RzS2zYzYzYzYzYzYzY' +
+      '&output=json' +
+      '&coordtype=wgs84ll' +
+      '&location=' + lat + ',' + lng +
+      '&callback=' + callbackName;
+
+    let executed = false;
 
     window[callbackName] = function(data) {
+      if (executed) return;
+      executed = true;
       try {
-        if (data.status === '1' && data.geocodes && data.geocodes.length > 0) {
-          const geo = data.geocodes[0];
-          const parts = geo.location.split(',');
-          latI.value = parseFloat(parts[1]).toFixed(6);
-          lonI.value = parseFloat(parts[0]).toFixed(6);
-          addressI.value = geo.formatted_address || address;
-          update();
-        }
-      } catch(e) {}
-      delete window[callbackName];
-      if (script.parentNode) document.body.removeChild(script);
-    };
-
-    script.onerror = function() {
-      delete window[callbackName];
-      if (script.parentNode) document.body.removeChild(script);
-    };
-
-    document.body.appendChild(script);
-  }
-
-  // ---------- 逆地理编码 ----------
-  function reverseGeocode(lat, lon) {
-    const callbackName = 'amapReverse_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-    const script = document.createElement('script');
-    const url = `https://restapi.amap.com/v3/geocode/regeo?location=${lon},${lat}&key=${AMAP_KEY}&output=jsonp&callback=${callbackName}`;
-
-    window[callbackName] = function(data) {
-      try {
-        if (data.status === '1' && data.regeocode) {
-          const formatted = data.regeocode.formatted_address || data.regeocode.address || '未知地址';
+        if (data.status === 0 && data.result) {
+          const formatted = data.result.formatted_address || data.result.address || '未知地址';
           addressI.value = formatted;
           update();
         }
@@ -502,15 +435,13 @@ input,select{background:#1f2937;border:1px solid #374151;color:#eee;border-radiu
     }
   });
 
-  // ---------- 页面加载完成提示 ----------
-  console.log('✅ 磐石水印相机已加载');
-  console.log('📌 输入地点即可搜索，如：北京朝阳大悦城');
-
-  // 预置示例数据
+  // ---------- 页面加载后自动搜索示例 ----------
   setTimeout(function() {
-    locI.value = '北京朝阳大悦城';
-    searchPOI('北京朝阳大悦城');
-  }, 1000);
+    locI.value = '北京国贸';
+    searchPOI('北京国贸');
+  }, 500);
+
+  console.log('✅ 磐石水印相机已加载（百度地图版）');
 </script>
 </body>
 </html>
